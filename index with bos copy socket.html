@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  </head>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Roboto", sans-serif;
+      color: white;
+    }
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 2%;
+      transform: translate(-50%, -50%);
+    }
+    #ammo_container {
+      position: absolute;
+      right: 5%;
+      bottom: 5%;
+      font-size: 3em;
+    }
+    #score_container {
+      position: absolute;
+      right: 5%;
+      top: 5%;
+      font-size: 3em;
+    }
+    #progress {
+      position: absolute;
+      bottom: 9%;
+      left: 0;
+      width: 0;
+      height: 2%;
+      background-color: white;
+    }
+    #health_container {
+      position: absolute;
+      bottom: 8%;
+      left: 5%;
+      width: 18%;
+      height: 2%;
+      border: 1px solid #ffffff;
+    }
+    #health_progress {
+      position: absolute;
+      background-color: #ffffff;
+      width: 100%;
+      height: 100%;
+    }
+    #game_hud {
+      visibility: hidden;
+    }
+    #menu {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      visibility: hidden;
+    }
+    h1 {
+      font-family: "Libre Barcode 39 Text", cursive;
+      font-size: 4em;
+    }
+    button {
+      background-color: rgba(0, 0, 0, 0);
+      color: rgb(221, 221, 221);
+      font-size: 1.5em;
+      border: none;
+      cursor: pointer;
+      margin-top: 10%;
+      font-weight: 700;
+    }
+    #debug {
+      position: absolute;
+      right: 5%;
+      top: 5%;
+    }
+    #death_screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+      opacity: 0.4;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      visibility: hidden;
+    }
+    #death_screen div {
+      opacity: 1;
+    }
+    #right {
+      border: #000;
+      border-style: solid;
+      margin: 5px;
+    }
+    #left {
+      border: #000;
+      border-style: solid;
+      margin: 5px;
+    }
+    #selectMenu {
+      color: black;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-color: wheat;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      visibility: hidden;
+    }
+    #info {
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: aqua;
+      z-index: 2;
+      visibility: visible;
+    }
+    #gridSelector {
+      position: fixed;
+      visibility: hidden;
+      right: 0;
+      top: 12vh;
+      background-color: chocolate;
+      border-radius: 10px;
+    }
+    #gridSelector > button {
+      font-size: 1em;
+    }
+    #collectMenu {
+      display: none;
+    }
+    #buildMenu > button {
+      border: solid #000;
+      border-radius: 10px;
+    }
+    #collectMenu > button {
+      border: solid #000;
+      border-radius: 10px;
+    }
+    .buildable {
+      margin-top: 0.2em;
+      margin-bottom: 0.2em;
+    }
+    #resources {
+      position: fixed;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+      visibility: hidden;
+      top: 0px;
+      height: 10vh;
+      gap: 50px;
+      width: 100vw;
+    }
+
+    #resources div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .villagerList {
+      margin: 5px;
+      padding: 2px;
+      border: solid black;
+      border-radius: 10px;
+    }
+    .jobButton {
+      font-size: 1.5em;
+      line-height: 0.8em;
+    }
+    .job {
+      font-size: 0.6em;
+      margin-bottom: 10px;
+    }
+    .houseNumber {
+      font-size: 1.7em;
+    }
+
+    #error {
+      position: fixed;
+      bottom: 0;
+      color: red;
+    }
+  </style>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+  </style>
+  <script
+    async
+    src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"
+  ></script>
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/gh/kripken/ammo.js@HEAD/builds/ammo.js"
+  ></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.141.0/build/three.module.js"
+      }
+    }
+  </script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- <script
+    type="text/javascript"
+    src="/node_modules/physijs/src/physi.js"
+  ></script> -->
+
+  <script type="module">
+    //import * as THREE from "three";
+
+    import * as THREE from "three";
+    //from "https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js";
+
+    // import { OrbitControls } from "https://unpkg.com/three@0.141.0/examples/jsm/controls/OrbitControls.js";
+    // import { OrbitControls } from "https://unpkg.com/three@0.141.0/examples/fonts/helvetiker_regular.typeface.json";
+    // import Stats from "./jsm/libs/stats.module.js";
+
+    import { GLTFLoader } from "https://unpkg.com/three@0.141.0/examples//jsm/loaders/GLTFLoader.js";
+
+    import { FBXLoader } from "https://unpkg.com/three@0.141.0/examples/jsm/loaders/FBXLoader.js";
+    import { FontLoader } from "https://unpkg.com/three@0.141.0/examples/jsm/loaders/FontLoader.js";
+    import { TextGeometry } from "https://unpkg.com/three@0.141.0/examples/jsm/geometries/TextGeometry.js";
+
+    //import { Pathfinding } from 'https://unpkg.com/three-pathfinding@1.1.0/src/index.js';
+
+    import randomP from "/random.json" assert { type: "json" };
+    // import bos from "/character.gltf";
+
+    // import { Octree } from "https://unpkg.com/three@0.141.0/examples//jsm/math/Octree.js";
+    // import { OctreeHelper } from "https://unpkg.com/three@0.141.0/examples//jsm/helpers/OctreeHelper.js";
+
+    // import { Capsule } from "https://unpkg.com/three@0.141.0/examples//jsm/math/Capsule.js";
+
+    // import { GUI } from "https://unpkg.com/three@0.141.0/examples//jsm/libs/lil-gui.module.min.js";
+
+    ////import Ammo from "/js/ammo.js";
+
+    //import { annuaire } from "/annuaire.js";
+
+    class TimerResource {
+      constructor(obj, scene) {
+        this.obj = obj;
+        this.prop = obj.prop;
+        this.timer = 0;
+        this.scene = scene;
+        this.fontLoader = new FontLoader();
+
+        this.setTimer();
+      }
+
+      setTimer() {
+        if (this.prop == "stone") this.addTimer(5);
+        else if (this.prop == "wheat") this.addTimer(2);
+        else if (this.prop == "wood") this.addTimer(5);
+      }
+
+      addTimer(time) {
+        this.obj.collectable = false;
+        this.fontLoader.load(
+          "https://unpkg.com/three@0.141.0/examples/fonts/helvetiker_regular.typeface.json",
+          (font) => {
+            const geometry = new TextGeometry("00:0" + time, {
+              font: font,
+              size: 5,
+              height: 5,
+              //curveSegments: 12,
+              //bevelEnabled: true,
+              //bevelThickness: 10,
+              //bevelSize: 8,
+              //bevelOffset: 0,
+              //bevelSegments: 5,
+            });
+
+            let text = new THREE.Mesh(
+              geometry,
+              new THREE.MeshPhongMaterial({ color: 0x3e00cf })
+            );
+            text.position.set(
+              this.obj.position.x - 10,
+              this.obj.position.y + 10,
+              this.obj.position.z
+            );
+            text.time = time;
+            this.scene.add(text);
+            text.name = text.id;
+            this.updateTimer(time, text.id);
+          }
+        );
+      }
+
+      updateTimer(time, id) {
+        this.currentId = id;
+        let interval = setInterval(() => {
+          if (!this.scene.getObjectByName(this.currentId)) return;
+          if (Number(this.scene.getObjectByName(this.currentId).time) != 0) {
+            let newTimeProp =
+              Number(this.scene.getObjectByName(this.currentId).time) - 1;
+            let position = {
+                x: this.scene.getObjectByName(this.currentId).position.x,
+                y: this.scene.getObjectByName(this.currentId).position.y,
+                z: this.scene.getObjectByName(this.currentId).position.z,
+              },
+              newId = this.scene.getObjectByName(this.currentId).id;
+            this.scene.remove(this.scene.getObjectByName(this.currentId));
+            this.createtext(
+              newTimeProp,
+              position.x,
+              position.y,
+              position.z,
+              newId
+            );
+          } else {
+            this.obj.collectable = true;
+            this.scene.remove(this.scene.getObjectByName(this.currentId));
+            console.log("you can collect");
+            clearInterval(interval);
+          }
+        }, 1000);
+      }
+
+      createtext(time, x, y, z, id) {
+        this.fontLoader.load(
+          "https://unpkg.com/three@0.141.0/examples/fonts/helvetiker_regular.typeface.json",
+          (font) => {
+            const geometry = new TextGeometry("00:0" + time, {
+              font: font,
+              size: 5,
+              height: 5,
+              //curveSegments: 12,
+              //bevelEnabled: true,
+              //bevelThickness: 10,
+              //bevelSize: 8,
+              //bevelOffset: 0,
+              //bevelSegments: 5,
+            });
+
+            let text = new THREE.Mesh(
+              geometry,
+              new THREE.MeshPhongMaterial({ color: 0x3e00cf })
+            );
+            text.position.set(x, y, z);
+            text.name = id;
+            text.time = time;
+            this.scene.add(text);
+            return (this.currentId = text.name);
+          }
+        );
+      }
+    }
+
+    class Villager {
+      constructor(scene, loader) {
+        this.scene = scene;
+        this.FBXLoader = new FBXLoader();
+        this.mixer = [];
+        this.villagers = [];
+        this.villagerActions = [];
+        this.clock = new THREE.Clock();
+        this.villagerSpeed = 0.2;
+        //this.id = id
+        //this.villager = this.villagers[id]
+        //this.createVillager(position, house);
+      }
+      createVillager(position, house) {
+        console.log(...position);
+        this.houseN = house;
+        for (let i = 1; i < 4; i++) {
+          this.FBXLoader.load(
+            "/character/stickman/source/Simple_Character.fbx",
+            (fbx) => {
+              this.villagers[house + "." + i] = fbx;
+              console.log(position);
+              this.villagers[house + "." + i].position.set(...position);
+              this.villagers[house + "." + i].scale.set(0.03, 0.03, 0.03);
+              this.villagers[house + "." + i].house = house;
+              this.villagers[house + "." + i].job = "Is not working";
+              this.villagers[house + "." + i].housePos = position;
+
+              this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
+
+              if (fbx.animations[0]) {
+                const animationAction = this.mixer[house + "." + i].clipAction(
+                  fbx.animations[1]
+                );
+                animationAction.play();
+                this.activeAction = animationAction;
+                this.villagerActions.push(animationAction);
+                this.villagerActions.push(
+                  this.mixer[house + "." + i].clipAction(fbx.animations[0])
+                );
+              }
+              this.scene.add(this.villagers[house + "." + i]);
+            },
+            undefined,
+            (error) => {
+              console.error(error);
+            }
+          );
+          setTimeout(() => {
+            this.modelReady = true;
+            console.log(this.villagerActions);
+            console.log("model ready");
+          }, 500);
+        }
+        this.addVillagerMenu();
+      }
+      addVillagerMenu() {
+        if (this.houseN == 1) return;
+        if (document.querySelector("#noVillagerText")?.style) {
+          document.querySelector("#noVillagerText").style.visibility = "hidden";
+        }
+        let workerList = "";
+        for (let i = 1; i < this.houseN; i++) {
+          console.log(i);
+          workerList =
+            workerList +
+            `<dl class="villagerList"><dt class="houseNumber">House n°${i}</dt><dd class="villagerName"><button villagerid="${
+              i + ".1"
+            }" class="jobButton">Villageois ${i}.1<br/><div villagerid="${
+              i + ".1"
+            }" class="job">${
+              this.villagers[i + ".1"].job
+            }</div></button></dd><dd class="villagerName"><button villagerid="${
+              i + ".2"
+            }" class="jobButton">Villageois ${i}.2<br/><div villagerid="${
+              i + ".2"
+            }" class="job">${
+              this.villagers[i + ".2"].job
+            }</div></button></dd><dd class="villagerName"><button villagerid="${
+              i + ".3"
+            }" class="jobButton">Villageois ${i}.3<br/><div villagerid="${
+              i + ".3"
+            }" class="job">${this.villagers[i + ".3"].job}
+              </div></button></dd></dl>`;
+        }
+        document.querySelector("#collectMenu").innerHTML = workerList;
+        document.querySelectorAll(".jobButton").forEach((e) => {
+          e.removeEventListener("click", (e) => this.doJob(e), false);
+        });
+        document.querySelectorAll(".jobButton").forEach((e) => {
+          e.addEventListener("click", (e) => this.doJob(e), false);
+        });
+      }
+
+      doJob(e) {
+        this.villagers[e.target.getAttribute("villagerid")].job = `from ${
+          this.scene.getObjectByName("click").prop
+        } at ${this.scene.getObjectByName("click").position.x / 20}, ${
+          this.scene.getObjectByName("click").position.z / 20
+        } to House  n°${e.target.getAttribute("villagerid").split(".")[0]}`;
+        this.villagers[e.target.getAttribute("villagerid")].collectTarget = [
+          this.scene.getObjectByName("click").position.x,
+          -28,
+          this.scene.getObjectByName("click").position.z,
+        ];
+        this.villagers[e.target.getAttribute("villagerid")].jobType =
+          this.scene.getObjectByName("click").prop;
+
+        this.addVillagerMenu();
+      }
+
+      returnToHouse(id) {
+        this.villagers[id].returnHouse = true;
+        this.villagers[id].stay = false;
+      }
+
+      villagerStay(id) {
+        let type = this.villagers[id].jobType;
+        if (this.villagers[id].returnHouse) {
+        }
+        if (type == "wood") {
+          setTimeout(() => {
+            this.returnToHouse(id);
+          }, 1500);
+        } else if (type == "stone") {
+          setTimeout(() => {
+            this.returnToHouse(id);
+          }, 300);
+        }
+      }
+
+      moveVillagers(id, target) {
+        //this.setAction(this.villagerActions[0]);
+        if (!this.villagers[id]?.job) return;
+        if (this.villagers[id].job == "Is not working") return;
+
+        let mesh1 = {
+          x: this.villagers[id].position.x,
+          z: this.villagers[id].position.z,
+        };
+        let mesh2 = {
+          x: target[0],
+          z: target[2],
+        };
+
+        var dx = Math.abs(mesh1.x - mesh2.x);
+        if (mesh1.x > mesh2.x) {
+          this.villagers[id].position.x -= Math.min(dx, this.villagerSpeed);
+        } else if (mesh1.x < mesh2.x) {
+          this.villagers[id].position.x += Math.min(dx, this.villagerSpeed);
+        }
+
+        var dz = Math.abs(mesh1.z - mesh2.z);
+        if (mesh1.z > mesh2.z) {
+          this.villagers[id].position.z -= Math.min(dz, this.villagerSpeed);
+        } else if (mesh1.z < mesh2.z) {
+          this.villagers[id].position.z += Math.min(dz, this.villagerSpeed);
+        }
+
+        if (mesh1.x == mesh2.x && mesh1.z == mesh2.z) {
+          if (
+            this.villagers[id].stay == false ||
+            this.villagers[id].stay == undefined
+          ) {
+            this.villagers[id].stay = true;
+            //this.villagerStay(id);
+          }
+          this.setAction(this.villagerActions[1]);
+        } else {
+          this.setAction(this.villagerActions[0]);
+        }
+      }
+
+      work() {
+        if (this.houseN == 1) return;
+        for (let i = 1; i < this.houseN; i++) {
+          for (let j = 1; j < 4; j++) {
+            //this.setAction(this.villagerActions[0]);
+            if (!this.villagers[i + "." + j]?.job) return;
+            if (this.villagers[i + "." + j].job == "Is not working") return;
+
+            if (this.villagers[i + "." + j].stay == true && !this.villagers[i + "." + j].returnHouse) {
+              this.villagerStay(i + "." + j);
+            }
+            if (
+              !this.villagers[i + "." + j].returnHouse &&
+              !this.villagers[i + "." + j].stay
+            ) {
+              this.moveVillagers(
+                i + "." + j,
+                this.villagers[i + "." + j].collectTarget
+              );
+            }
+            if (
+              this.villagers[i + "." + j].returnHouse == true &&
+              !this.villagers[i + "." + j].stay
+            ) {
+              this.moveVillagers(
+                i + "." + j,
+                this.villagers[i + "." + j].housePos
+              );
+            }
+            if (
+              this.villagers[i + "." + j].returnHouse == true &&
+              this.villagers[i + "." + j].stay == true
+            ) {
+              this.addResources(this.villagers[i + "." + j].jobType, 5)
+              this.villagers[i + "." + j].returnHouse = false;
+              this.villagers[i + "." + j].stay = false;
+            }
+          }
+        }
+      }
+
+      addResources(value, nbr) {
+        document.querySelector(`#${value}Count`).textContent =
+          Number(document.querySelector(`#${value}Count`).textContent) + nbr;
+      }      
+
+      setAction(toAction) {
+        //console.log(toAction);
+        // toAction.play();
+        if (toAction != this.activeAction && toAction != undefined) {
+          this.lastAction = this.activeAction;
+          this.activeAction = toAction;
+          //lastAction.stop()
+          this.lastAction.fadeOut(1);
+          toAction.reset();
+          toAction.fadeIn(1);
+          toAction.play();
+        }
+      }
+
+      update() {
+        this.delta = this.clock.getDelta();
+
+        if (this.mixer && this.modelReady) {
+          this.mixer.forEach((e)=>{
+            e.update(this.delta)
+          })
+          //this.animationActions[0].play()
+          //console.log(this.villagers["1.1"]);
+          //console.log(this.villagerActions[0].isRunning());
+          //this.mixer["1.1"].update(this.delta);
+          //this.mixer.update(this.delta);
+        }
+        //console.log(this.player.position);
+
+        this.work();
+        //this.moveVillagers();
+      }
+    }
+
+    class App {
+      constructor() {
+        this.socket = io();
+        //this.socket.on("pos", (d) => (console.log(d)));
+        this.clock = new THREE.Clock();
+        this.STEPS_PER_FRAME = 5;
+        this.GRAVITY = -7.5;
+
+        this.rigidBodies = [];
+        this.currentPosition = new THREE.Vector3();
+        this.currentLookat = new THREE.Vector3();
+
+        this.assets = [];
+        //this.zombieAnims = [];
+        // this.tempTransform = null;
+
+        // keyboard controls
+        this.speed = 0.5;
+        this._keys = {
+          moveForward: false,
+          moveBackward: false,
+          moveLeft: false,
+          moveRight: false,
+          space: false,
+          shift: false,
+        };
+
+        this.rotationView = -1;
+
+        this.tempVec = new THREE.Vector3();
+
+        this.player = null;
+        // moveDirection = { left: 0, right: 0, forward: 0, back: 0 };
+        this.STATE = { DISABLE_DEACTIVATION: 4 };
+
+        this.mouse = new THREE.Vector2();
+        this.clickableObjs = [];
+        this.raycaster = new THREE.Raycaster();
+        this.randomP = randomP[0];
+        this.previousFrame = null;
+
+        this.isMouseHover = false;
+
+        this.canCollect = false;
+
+        this.modelReady = false;
+
+        this.players = {};
+        this.mainPlayer = null;
+
+        this.animationActions = [];
+
+        this.activeAction;
+        this.villagers = [];
+
+        this.houseN = 1;
+
+        this.villagerSpeed = 0.4;
+        this.villagerActions = [];
+        this.mixer = [];
+
+        this.init();
+        // this.createRender();
+        // this.keyboardControls();
+        // this.startAmmo();
+        // this.update();
+      }
+
+      init() {
+        this.createRender();
+        this.eventResize();
+        // this.load();
+        this.createLight();
+        //this.loadBackground();
+        this.SetupStartButton();
+        // this.keyboardControls();
+
+        // this.startAmmo();
+        // this.update();
+        this.ShowMenu();
+      }
+
+      SetupStartButton() {
+        document
+          .getElementById("start_game")
+          .addEventListener("click", () => this.showSelectMenu());
+      }
+
+      StartGame = () => {
+        window.cancelAnimationFrame(this.update);
+
+        //Create entities and physics
+        // this.scene.clear();
+        this.Villagers = new Villager(this.scene, this.FBXLoader);
+        this.addEvent();
+        this.keyboardControls();
+        this.mouseControls();
+        this.createAmmo();
+        //this.createPathfinding()
+        document.querySelector("#resources").style.visibility = "visible";
+        //this.showResources();
+        //this.animFrameId = window.requestAnimationFrame(this.update);
+        this.update();
+        console.log(document.getElementById("Ipad").value);
+        //if (document.getElementById("Ipad").checked == true) {
+        //  this.SetupTactileButton();
+        //}
+        // this.ShowMenu(false);
+        //Set
+      };
+
+      //createPathfinding() {
+      //  this.pathfinding = new Pathfinding()
+      //  this.zone = "world"
+      //  this.pathfinding.setZoneData(this.zone, Pathfinding.createZone())
+      //}
+
+      addEvent() {
+        document
+          .querySelector("#showBuildMenu")
+          .addEventListener("click", (e) => this.toggleMenu(e), false);
+        document
+          .querySelector("#showCollectMenu")
+          .addEventListener("click", (e) => this.toggleMenu(e), false);
+        document
+          .querySelector("#buildHouse")
+          .addEventListener("click", (e) => this.buildHouse(e), false);
+      }
+
+      toggleMenu(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        $("#buildMenu").toggle();
+        $("#collectMenu").toggle();
+      }
+
+      // loadCharacter = () => {
+      //   console.log("e");
+      // };
+
+      //load(path) {
+      //  this.animationActions = [];
+      //
+      //  this.activeAction;
+      //  this.loader.load(
+      //    path,
+      //    (fbx) => {
+      //      console.log(fbx);
+      //      this.player = this.player = fbx;
+      //      this.player.rotation.set(0, this.rotationView, 0);
+      //      this.player.scale.set(this.scale, this.scale, this.scale);
+      //      this.mixer = new THREE.AnimationMixer(fbx);
+      //      // console.log(fbx);
+      //
+      //      const animationAction = this.mixer.clipAction(fbx.animations[0]);
+      //      this.activeAction = animationAction;
+      //      this.animationActions.push(animationAction);
+      //      // this.setAction(animationAction);
+      //
+      //      // const action = this.mixer.clipAction(fbx.animations[0]);
+      //      // action.play();
+      //
+      //      this.scene.add(this.player);
+      //      // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
+      //      // console.log(this.player.rotation);
+      //      this.loadAction("/character/mutant/Idle.fbx", "idle");
+      //      this.loadAction("/character/mutant/Walking.fbx", "walk");
+      //      this.loadAction("/character/mutant/Jumping.fbx", "jump");
+      //      this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
+      //    },
+      //    undefined,
+      //    (error) => {
+      //      console.error(error);
+      //    }
+      //  );
+      //
+      //  // this.loader.load(
+      //  //   "/mutant/Idle.fbx",
+      //  //   (anim) => {
+      //  //     console.log(anim);
+      //  //     const animationAction = this.mixer.clipAction(anim.animations[0]);
+      //  //     this.animationActions.push(animationAction);
+      //  //     // animationsFolder.add(animations, "default");
+      //
+      //  //     // animationAction.play();
+      //
+      //  //     // this.setAction(animationAction);
+      //
+      //  //     // const action = this.mixer.clipAction(anim.animations[0]);
+      //  //     // action.play();
+      //  //     // animationsFolder.add(animations, "walking");
+      //  //     // console.log(fbx);
+      //  //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
+      //  //     // this.assets["walkAnim"] = fbx;
+      //  //     // this.zombieAnims = {};
+      //  //     // this.SetAnim("walk", this.assets["walkAnim"]);
+      //  //   },
+      //  //   undefined,
+      //  //   (error) => {
+      //  //     console.error(error);
+      //  //   }
+      //  // );
+      //
+      //  // this.loader.load(
+      //  //   "/mutant/Walking.fbx",
+      //  //   (fbx) => {
+      //  //     console.log(fbx);
+      //  //     const animationAction = this.mixer.clipAction(fbx.animations[0]);
+      //  //     this.animationActions.push(animationAction);
+      //  //     // const action = this.mixer.clipAction(fbx.animations[0]);
+      //  //     // action.play();
+      //  //     // animationsFolder.add(animations, "walking");
+      //  //     // console.log(fbx);
+      //  //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
+      //  //     // this.assets["walkAnim"] = fbx;
+      //  //     // this.zombieAnims = {};
+      //  //     // this.SetAnim("walk", this.assets["walkAnim"]);
+      //  //   },
+      //  //   undefined,
+      //  //   (error) => {
+      //  //     console.error(error);
+      //  //   }
+      //  // );
+      //
+      //  // this.SetAnim("idle", this.assets["idleAnim"]);
+      //  // this.SetAnim("run", this.assets["runAnim"]);
+      //  // this.SetAnim("attack", this.assets["attackAnim"]);
+      //  // this.SetAnim("die", this.assets["dieAnim"]);
+      //  setTimeout(() => {
+      //    this.modelReady = true;
+      //    console.log(this.animationActions);
+      //    console.log("model ready");
+      //  }, 500);
+      //}
+
+      showSelectMenu(visible = true) {
+        document.querySelector("#shrek").addEventListener("click", (e) => {
+          //const Annuaire = new annuaire(e.target.id);
+          //this.scale = Annuaire.scale;
+          //this.yAtOrigin = Annuaire.yAtOrigin;
+          //let path = Annuaire.path;
+          //this.load(path);
+          document.getElementById("selectMenu").style.visibility = "hidden";
+          this.StartGame();
+        });
+        document.querySelector("#thanos").addEventListener("click", (e) => {
+          //const Annuaire = new annuaire(e.target.id);
+          //this.scale = Annuaire.scale;
+          //this.yAtOrigin = Annuaire.yAtOrigin;
+          //let path = Annuaire.path;
+          //this.load(path);
+          document.getElementById("selectMenu").style.visibility = "hidden";
+          this.StartGame();
+        });
+
+        // img.forEach((e) => {
+        //   e.addEventListener("click", (e) => this.load(e));
+        // });
+
+        document.getElementById("menu").style.visibility = "hidden";
+        document.getElementById("selectMenu").style.visibility = "visible";
+      }
+
+      ShowMenu(visible = true) {
+        document.getElementById("menu").style.visibility = visible
+          ? "visible"
+          : "hidden";
+      }
+
+      //SetupTactileButton() {
+      //  var container = document.createElement("div");
+      //  container.style.position = "absolute";
+      //  container.style.bottom = "0px";
+      //  container.style.left = "0px";
+      //  container.id = "tactile_container";
+      //  var left = document.createElement("button");
+      //  left.innerHTML = "Go Left";
+      //  left.id = "left";
+      //  var right = document.createElement("button");
+      //  right.innerHTML = "Go Right";
+      //  right.id = "right";
+      //  document.body.appendChild(container);
+      //  document.getElementById("tactile_container").appendChild(left);
+      //  document.getElementById("tactile_container").appendChild(right);
+      //  this.tactileControls();
+      //}
+
+      //tactileControls() {
+      //  document.getElementById("left").addEventListener("click", () => {
+      //    this._keys.moveLeft = 1;
+      //  });
+      //  document.getElementById("right").addEventListener("click", () => {
+      //    console.log("right");
+      //    this._keys.moveRight = 1;
+      //  });
+      //}
+
+      showResources() {
+        document.querySelector("#resources").style.visibility = "visible";
+      }
+
+      createRender() {
+        this.collisionConfiguration =
+          new Ammo.btDefaultCollisionConfiguration();
+        this.dispatcher = new Ammo.btCollisionDispatcher(
+          this.collisionConfiguration
+        );
+        this.overlappingPairCache = new Ammo.btDbvtBroadphase();
+        this.solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+        this.dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(
+          this.dispatcher,
+          this.overlappingPairCache,
+          this.solver,
+          this.collisionConfiguration
+        );
+        this.dynamicsWorld.setGravity(new Ammo.btVector3(0, this.GRAVITY, 0));
+
+        this.renderer = new THREE.WebGLRenderer({
+          antialias: true,
+        });
+        //this.render.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(this.renderer.domElement);
+
+        this.scene = new THREE.Scene();
+
+        this.camera = new THREE.PerspectiveCamera(
+          60,
+          window.innerWidth / window.innerHeight,
+          1,
+          1000
+        );
+        this.camera.position.set(0, 10, 50);
+        this.camera.lookAt(0, -30, 0);
+
+        // this.scene.background = new THREE.Color(0xffffff);
+
+        this.loader = new THREE.TextureLoader();
+        this.GLTFLoader = new GLTFLoader();
+        this.FBXLoader = new FBXLoader();
+      }
+
+      eventResize() {
+        window.addEventListener("resize", () => {
+          this.renderer.setSize(window.innerWidth, window.innerHeight);
+          this.camera.aspect = window.innerWidth / window.innerHeight;
+          this.camera.updateProjectionMatrix();
+        });
+      }
+
+      createLight() {
+        const ambiantLight = new THREE.AmbientLight(0xffffff, 1); // soft white light
+        this.scene.add(ambiantLight);
+        this.light = new THREE.DirectionalLight(0xffffff, 1);
+        this.light.position.set(0, 0, 10);
+        this.scene.add(this.light);
+      }
+
+      // SetAnim(name, clip) {
+      //   const action = this.mixer.clipAction(clip);
+      //   this.animations[name] = { clip, action };
+      // }
+
+      loadAction(path, name) {
+        console.log(path);
+        this.FBXLoader.load(
+          path,
+          (fbx) => {
+            const animationAction = this.mixer.clipAction(fbx.animations[0]);
+            this.animationActions[name] = animationAction;
+          },
+          undefined,
+          (error) => {
+            console.error(error);
+          }
+        );
+      }
+
+      setAction(toAction) {
+        //console.log(toAction);
+        // toAction.play();
+        if (toAction != this.activeAction && toAction != undefined) {
+          this.lastAction = this.activeAction;
+          this.activeAction = toAction;
+          //lastAction.stop()
+          this.lastAction.fadeOut(1);
+          toAction.reset();
+          toAction.fadeIn(1);
+          toAction.play();
+        }
+      }
+
+      //loadBackground() {
+      //  const IMGloader = new THREE.TextureLoader();
+      //  var texture = IMGloader.load("/background/teletebise.png");
+      //  // console.log(window.innerWidth, window.innerHeight);
+      //  var backgroundMesh = new THREE.Mesh(
+      //    new THREE.PlaneGeometry(
+      //      window.innerWidth / 8.28,
+      //      window.innerHeight / 8.28,
+      //      1
+      //    ),
+      //    new THREE.MeshBasicMaterial({
+      //      map: texture,
+      //    })
+      //  );
+      //  backgroundMesh.position.z = -10;
+      //  this.scene.add(backgroundMesh);
+      //  this.ShowMenu();
+      //}
+
+      keyboardControlsDown(e) {
+        var key = e.keyCode;
+        // console.log(key);
+
+        switch (key) {
+          case 90:
+          case 38:
+            this._keys.moveForward = 1;
+            break;
+          case 81:
+          case 37:
+            // console.log(this.scene.getObjectByName("player"));
+            // this.scene.getObjectByName("player").position.y -= 0.9;
+            this._keys.moveLeft = 1;
+            this.seeAtRight = false;
+            //this.setAction(this.animationActions["walk"]);
+            break;
+          case 83:
+          case 40:
+            this._keys.moveBackward = 1;
+            break;
+          case 68:
+          case 39:
+            this._keys.moveRight = 1;
+            this.seeAtRight = true;
+            //this.setAction(this.animationActions["walk"]);
+            break;
+          case 32:
+            // if (this.canJump)
+            this.jump = true;
+            break;
+
+          // case 13:
+          //   console.log(this.player.userData.physicsBody);
+          //   break;
+        }
+        this.socket.emit("pos", this.player.position.toArray());
+      }
+
+      keyboardControlsUp(e) {
+        switch (e.keyCode) {
+          case 90:
+          case 38:
+            this._keys.moveForward = 0;
+            break;
+          case 81:
+          case 37:
+            this._keys.moveLeft = 0;
+            if (this._keys.moveRight == 1) {
+              this.seeAtLeft = false;
+            }
+            //this.setAction(this.animationActions["idle"]);
+            break;
+          case 83:
+          case 40:
+            this._keys.moveBackward = 0;
+            break;
+          case 68:
+          case 39:
+            this._keys.moveRight = 0;
+            if (this._keys.moveLeft == 1) {
+              this.seeAtRight = false;
+            }
+            //this.setAction(this.animationActions["idle"]);
+            break;
+          case 32:
+            // if (this.canJump)
+            this.jump = false;
+            break;
+        }
+        //this.socket.emit("pos", this.player.position.toArray());
+      }
+
+      keyboardControls() {
+        window.addEventListener(
+          "keydown",
+          (e) => this.keyboardControlsDown(e),
+          false
+        );
+        window.addEventListener(
+          "keyup",
+          (e) => this.keyboardControlsUp(e),
+          false
+        );
+        window.addEventListener("keydown", (e) => this.collect(e), false);
+      }
+
+      collect(e) {
+        if (this.canCollect != true) return;
+        if (e.keyCode != 69) return;
+        let obj = this.scene.getObjectByName("click");
+        if (!obj || obj.collectable == false) return;
+
+        console.log(
+          Math.round(this.playerBB.distanceToPoint(obj.position.clone()) * 10) /
+            10
+        );
+        if (
+          Math.round(this.playerBB.distanceToPoint(obj.position.clone()) * 10) /
+            10 <
+          30
+        ) {
+          new TimerResource(obj, this.scene);
+          this.addResources(obj.prop, 5);
+        } else {
+          document.querySelector("#error").innerHTML = "<p>Too far</p>";
+        }
+      }
+
+      addResources(value, nbr) {
+        document.querySelector(`#${value}Count`).textContent =
+          Number(document.querySelector(`#${value}Count`).textContent) + nbr;
+      }
+
+      mouseDown(e) {
+        e.preventDefault();
+        this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        let intersects = this.raycaster.intersectObjects(this.clickableObjs);
+
+        if (this.isMouseHover == true) return;
+
+        if (intersects.length > 0) {
+          //console.log(intersects[0].object);
+          if (intersects[0].object.name == "click") {
+            intersects[0].object.name = "";
+            this.cursor_cube.children.forEach((e) => (e.material.opacity = 0));
+            this.cubePropertiesHidden();
+            this.gridSelectorHidden();
+            return;
+          }
+          if (this.scene.getObjectByName("click") != undefined)
+            this.scene.getObjectByName("click").name = "";
+
+          // If there is a match mouse/block (if the array is not empty)
+          var SelectedBloc = intersects[0].object; // we choose the first targetable element
+          intersects[0].object.name = "click";
+          //SelectedBloc.material.color.set( 0xff0000 );
+          this.cursor_cube.position.set(
+            SelectedBloc.position.x,
+            SelectedBloc.position.y,
+            SelectedBloc.position.z
+          );
+          this.cursor_cube.children.forEach((e) => (e.material.opacity = 0.5));
+          this.cursor_cube.children.forEach(
+            (e) => (e.material.emissive.g = 0.5)
+          );
+          //this.cursor_cube.material.opacity = 0.5;
+          //this.cursor_cube.material.emissive.g = 0.5;
+          this.cubeProperties(
+            SelectedBloc.position.x,
+            SelectedBloc.position.z,
+            intersects[0].object.prop,
+            intersects[0].object.name,
+            intersects[0].object
+          );
+        }
+      }
+
+      mouseUp() {
+        this.cursor_cube.children.forEach((e) => (e.material.emissive.g = 0));
+      }
+
+      mouseControls() {
+        const cursor_material = new THREE.MeshLambertMaterial({
+          transparent: true,
+          opacity: 0,
+          color: 0xc0392b,
+        });
+        //const bMat = new THREE.MeshStandardMaterial({ color: 0x0392b });
+
+        const cursor_geometry = [];
+        for (let i = 0; i < 12; i++) {
+          cursor_geometry.push(
+            new THREE.Mesh(new THREE.BoxGeometry(2.5, 4, 2.5), cursor_material)
+          );
+        }
+        cursor_geometry[0].position.set(-8.75, 0, -8.75);
+        cursor_geometry[1].position.set(-6.24, 0, -8.75);
+        cursor_geometry[2].position.set(-8.75, 0, -6.24);
+        cursor_geometry[3].position.set(8.75, 0, -8.75);
+        cursor_geometry[4].position.set(6.24, 0, -8.75);
+        cursor_geometry[5].position.set(8.75, 0, -6.24);
+        cursor_geometry[6].position.set(8.75, 0, 8.75);
+        cursor_geometry[7].position.set(6.24, 0, 8.75);
+        cursor_geometry[8].position.set(8.75, 0, 6.24);
+        cursor_geometry[9].position.set(-8.75, 0, 8.75);
+        cursor_geometry[10].position.set(-6.24, 0, 8.75);
+        cursor_geometry[11].position.set(-8.75, 0, 6.24);
+
+        this.cursor_cube = new THREE.Group();
+        for (const e of cursor_geometry) {
+          this.cursor_cube.add(e);
+        }
+        //this.cursor_cube.children.forEach((e) => (e.material.opacity = 0));
+        this.scene.add(this.cursor_cube);
+        document.addEventListener(
+          "pointerdown",
+          (e) => this.mouseDown(e),
+          false
+        );
+        document.addEventListener("pointerup", (e) => this.mouseUp(e), false);
+
+        let test = document.getElementById("info");
+        test.addEventListener(
+          "mouseleave",
+          (event) => (this.isMouseHover = false),
+          false
+        );
+        test.addEventListener(
+          "mouseover",
+          (event) => (this.isMouseHover = true),
+          false
+        );
+        let test2 = document.getElementById("gridSelector");
+        test2.addEventListener(
+          "mouseleave",
+          (event) => (this.isMouseHover = false),
+          false
+        );
+        test2.addEventListener(
+          "mouseover",
+          (event) => (this.isMouseHover = true),
+          false
+        );
+      }
+
+      buildHouse(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (document.querySelector("#woodCount").textContent >= 50) {
+          document.querySelector("#woodCount").textContent =
+            Number(document.querySelector("#woodCount").textContent) - 50;
+          let x = Number(document.querySelector("#x").innerHTML);
+          let z = Number(document.querySelector("#z").innerHTML);
+          this.loadStructure("house_minecraft/scene.gltf", x, z, 20);
+          this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
+
+          this.houseN = this.houseN + 1;
+          this.Villagers.houseN = this.houseN;
+        } else {
+          document.querySelector("#error").innerHTML = "<p>No enought Wood</p>";
+        }
+      }
+
+      showGridSelector() {
+        document.querySelector("#gridSelector").style.visibility = "visible";
+      }
+
+      gridSelectorHidden() {
+        document.querySelector("#gridSelector").style.visibility = "hidden";
+      }
+
+      cubeProperties(x, z, prop, name, obj) {
+        //const fragment = document.createDocumentFragment();
+
+        const li = document.querySelector("#info");
+        li.style.visibility = "visible";
+        //li = document.body.appendChild(document.createElement("div"));
+        li.innerHTML = `cube :<br>x:<div id="x">${x / 20}</div>,z:<div id="z">${
+          z / 20
+        }</div>`;
+        this.showGridSelector();
+        this.Villagers.addVillagerMenu(x, z);
+        console.log(prop);
+        if (prop == "plain") {
+          this.canCollect = false;
+          //li.innerHTML =
+          //  li.innerHTML + `<button id="buildHouse">Build house</button>`;
+          //document
+          //  .querySelector("#buildHouse")
+          //  .addEventListener("click", (e) => this.buildHouse(e), false);
+        } else if (prop == "stone") {
+          this.canCollect = true;
+          li.innerHTML = li.innerHTML + `<p>Press E to collect</p>`;
+        } else if (prop == "wood") {
+          this.canCollect = true;
+          li.innerHTML = li.innerHTML + `<p>Press E to collect</p>`;
+        }
+        //if (color.g != 1) {
+        //  li.innerHTML = li.innerHTML + `<br><button>Harvest</button>`
+        //}
+        //document.body.appendChild(fragment);
+      }
+
+      addVillagerMenu() {
+        if (this.houseN == 1) return;
+        if (document.querySelector("#noVillagerText")?.style) {
+          document.querySelector("#noVillagerText").style.visibility = "hidden";
+        }
+        let workerList = "";
+        for (let i = 1; i < this.houseN; i++) {
+          console.log(i);
+          workerList =
+            workerList +
+            `<dl class="villagerList"><dt class="houseNumber">House n°${i}</dt><dd class="villagerName"><button villagerid="${
+              i + ".1"
+            }" class="jobButton">Villageois ${i}.1<br/><div villagerid="${
+              i + ".1"
+            }" class="job">${
+              this.villagers[i + ".1"].job
+            }</div></button></dd><dd class="villagerName"><button villagerid="${
+              i + ".2"
+            }" class="jobButton">Villageois ${i}.2<br/><div villagerid="${
+              i + ".2"
+            }" class="job">${
+              this.villagers[i + ".2"].job
+            }</div></button></dd><dd class="villagerName"><button villagerid="${
+              i + ".3"
+            }" class="jobButton">Villageois ${i}.3<br/><div villagerid="${
+              i + ".3"
+            }" class="job">${this.villagers[i + ".3"].job}
+              </div></button></dd></dl>`;
+        }
+        document.querySelector("#collectMenu").innerHTML = workerList;
+        document.querySelectorAll(".jobButton").forEach((e) => {
+          e.removeEventListener("click", (e) => this.doJob(e), false);
+        });
+        document.querySelectorAll(".jobButton").forEach((e) => {
+          e.addEventListener("click", (e) => this.doJob(e), false);
+        });
+      }
+
+      doJob(e) {
+        this.villagers[e.target.getAttribute("villagerid")].job = `from ${
+          this.scene.getObjectByName("click").prop
+        } at ${this.scene.getObjectByName("click").position.x / 20}, ${
+          this.scene.getObjectByName("click").position.z / 20
+        } to House  n°${e.target.getAttribute("villagerid").split(".")[0]}`;
+        this.villagers[e.target.getAttribute("villagerid")].collectTarget = [
+          this.scene.getObjectByName("click").position.x,
+          -28,
+          this.scene.getObjectByName("click").position.z,
+        ];
+        this.villagers[e.target.getAttribute("villagerid")].jobType =
+          this.scene.getObjectByName("click").prop;
+
+        this.addVillagerMenu();
+      }
+
+      cubePropertiesHidden() {
+        document.querySelector("#info").style.visibility = "hidden";
+      }
+
+      //attack() {
+      //  this.setAction(this.animationActions["attack"]);
+      //}
+
+      //updateMovement() {
+      //  // const player = this.scene.getObjectByName("player");
+      //  // this.player.position.y = this.player.position.y + 0.2;
+      //  // console.log(this.moveLeft);
+      //  if (this._keys.moveLeft == 1) {
+      //    // console.log("left");
+      //    this.rotationView = 1;
+      //    this.setAction(this.animationActions["walk"]);
+      //    // this.player.position.x -= this.speed;
+      //  }
+      //  if (this._keys.moveRight == 1) {
+      //    // console.log("right");
+      //    this.rotationView = -1;
+      //    this.setAction(this.animationActions["walk"]);
+      //    // this.player.position.x += this.speed;
+      //  }
+      //}
+
+      updateJump() {
+        if (this.jump) {
+          // console.log("jump");
+          this.player.position.y = this.player.position.y + 5;
+          // canJump = false;
+          this.jump = false;
+        }
+      }
+
+      //startAmmo() {
+      //  Ammo().then((Ammo) => {
+      //    Ammo = Ammo;
+      //    this.AmmoClone = Ammo;
+      //    this.createAmmo(Ammo);
+      //  });
+      //}
+
+      createAmmo() {
+        this.TempTransform = new Ammo.btTransform();
+        this.tempVecJump = new Ammo.btVector3();
+
+        //this.setupGraphicsWolrd(Ammo);
+        this.createMap();
+        this.CreatePlayer();
+        //this.CreatePlayerLoad();
+        //this.loadStructure();
+      }
+
+      loadStructure(structure, x, z, scale) {
+        this.GLTFLoader.load(
+          "structure/" + structure,
+          (gltf) => {
+            let structure = gltf.scene;
+            structure.position.set(x * 20, -28, z * 20);
+            structure.scale.set(scale, scale, scale);
+            structure.name = `house${this.houseN}`;
+            this.scene.add(structure);
+          },
+          undefined,
+          (error) => {
+            console.error(error);
+          }
+        );
+      }
+
+      setupGraphicsWolrd() {
+        let collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+        let dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+        let overlappingPairCache = new Ammo.btDbvtBroadphase();
+        let solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+        this.dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(
+          dispatcher,
+          overlappingPairCache,
+          solver,
+          collisionConfiguration
+        );
+        this.dynamicsWorld.setGravity(new Ammo.btVector3(0, this.GRAVITY, 0));
+      }
+
+      //randomSeed(e) {
+      //  let x = Math.sin(e++) * 10000;
+      //  return Math.floor((x - Math.floor(x)) * 1000000000);
+      //}
+
+      //randomNumber(e) {
+      //  e++;
+      //  let x = Math.sin(e++) * 10000;
+      //  return Math.floor((x - Math.floor(x)) * 100);
+      //}
+      //
+
+      average(e) {
+        this.total = this.total + 1;
+        this.totalAdd = this.totalAdd + e;
+      }
+
+      moreRandomNumber(e) {
+        let randomNumber = new Math.seedrandom(e)();
+        return Math.round(randomNumber * 10000) / 100;
+      }
+
+      fullSeed() {
+        let worldInGen = this.generatingSeed();
+        return worldInGen * 10 ** (worldInGen.toString().length - 2);
+      }
+
+      addSeedRandom() {
+        let sSeed = this.fullSeed().toString();
+        for (let i = 0; i < sSeed.length; i = i + 2) {
+          this.seedRandom.push(
+            this.moreRandomNumber(Number(sSeed.charAt(i) + sSeed.charAt(i + 1)))
+          );
+        }
+      }
+
+      createMap() {
+        this.CreateSolidFloor(20, 20);
+
+        this.total = 0;
+        this.totalAdd = 0;
+
+        this.seed = 69;
+        this.generatingSeed = new Math.seedrandom(this.seed);
+        this.seedRandom = [];
+        //this.sSeed = this.generatingSeed.toString();
+        this.structureSeed = 1;
+        this.addSeedRandom();
+        //for (let i = 0; i < this.sSeed.length; i++) {
+        //  this.seedRandom.push(+this.sSeed.charAt(i));
+        //}
+
+        for (let x = -10; x < 10; x++) {
+          for (let z = -10; z < 10; z++) {
+            //let random = Math.floor(Math.random() * 100);
+            if (
+              !this.seedRandom[this.structureSeed] ||
+              this.seedRandom[this.structureSeed] == NaN
+            ) {
+              this.addSeedRandom();
+            }
+            let random = this.seedRandom[this.structureSeed];
+            console.log(random);
+            this.average(random);
+
+            if (random < this.randomP.houseVillager) {
+              this.createFloor(x, z, "img/grass.png", "houseVillager");
+
+              this.loadStructure("house_minecraft/scene.gltf", x, z, 20);
+              //this.createVillager(Ammo = AmmoClone, x,z)
+            } else if (random < this.randomP.stone) {
+              console.log("stone");
+              this.createFloor(x, z, "img/Andesite.png", "stone");
+              this.loadStructure("stylized__rock/scene.gltf", x, z, 40);
+            } else if (random < this.randomP.wood) {
+              this.createFloor(x, z, "img/grass.png", "wood");
+              this.loadStructure("a_simple_tree/scene.gltf", x, z, 0.01);
+            } else if (random < this.randomP.farmWithWheat) {
+              this.createFloor(
+                x,
+                z,
+                "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png",
+                "wheat"
+              );
+              //this.loadStructure("source/Field of wheat--eWhaaKNh755/FieldOfWheat(1).gltf", x, z, 1.2);
+            } else if (random < this.randomP.farmWithoutWheat) {
+              this.createFloor(
+                x,
+                z,
+                "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png"
+              );
+            } else {
+              this.createFloor(x, z, "img/grass.png", "plain");
+            }
+            this.structureSeed++;
+          }
+        }
+        console.log("true average = ", this.totalAdd / this.total);
+      }
+
+      createVillager(position, house) {
+        for (let i = 1; i < 4; i++) {
+          this.FBXLoader.load(
+            "/character/stickman/source/Simple_Character.fbx",
+            (fbx) => {
+              this.villagers[house + "." + i] = fbx;
+              console.log(position);
+              this.villagers[house + "." + i].position.set(...position);
+              this.villagers[house + "." + i].scale.set(0.03, 0.03, 0.03);
+              this.villagers[house + "." + i].house = house;
+              this.villagers[house + "." + i].job = "Is not working";
+              this.villagers[house + "." + i].housePos = position;
+              this.villagers[house + "." + i].stay = false;
+              this.villagers[house + "." + i].returnHouse = false;
+
+              this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
+
+              if (fbx.animations[0]) {
+                const animationAction = this.mixer[house + "." + i].clipAction(
+                  fbx.animations[1]
+                );
+                animationAction.play();
+                this.activeAction = animationAction;
+                this.villagerActions.push(animationAction);
+              }
+              this.scene.add(this.villagers[house + "." + i]);
+            },
+            undefined,
+            (error) => {
+              console.error(error);
+            }
+          );
+          setTimeout(() => {
+            this.modelReady = true;
+            console.log(this.villagerActions);
+            console.log("model ready");
+          }, 500);
+        }
+        this.addVillagerMenu();
+      }
+
+      createFloor(x, z, texture, property) {
+        let position = { x: 20 * x, y: -30, z: 20 * z },
+          scale = { x: 20, y: 3, z: 20 },
+          quat = { x: 0, y: 0, z: 0, w: 1 },
+          mass = 0;
+
+        const textureCube = this.loader.load(texture);
+
+        const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+        const material = new THREE.MeshBasicMaterial({
+          map: textureCube,
+        });
+
+        let blockPlane = new THREE.Mesh(geometry, material);
+        blockPlane.position.set(position.x, position.y, position.z);
+        if (property) blockPlane.prop = property;
+        blockPlane.collectable = true;
+        this.scene.add(blockPlane);
+
+        this.clickableObjs.push(blockPlane);
+      }
+
+      CreateSolidFloor(x, z) {
+        let quat = { x: 0, y: 0, z: 0, w: 1 },
+          mass = 0;
+
+        const geometry = new THREE.BoxGeometry(x * 0, 3, z * 0);
+        const material = new THREE.MeshLambertMaterial({
+          transparent: true,
+          opacity: 0,
+          color: 0x000000,
+        });
+
+        let blockPlane = new THREE.Mesh(geometry, material);
+        blockPlane.position.set(0, -30, 0);
+        this.scene.add(blockPlane);
+
+        let transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin(new Ammo.btVector3(0, -30, 0));
+        transform.setRotation(
+          new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
+        );
+
+        let motionState = new Ammo.btDefaultMotionState(transform);
+        let localInertia = new Ammo.btVector3(0, 0, 0);
+        let shape = new Ammo.btBoxShape(
+          new Ammo.btVector3(x * 20 * 0.5, -3 * 0.5, z * 20 * 0.5)
+        );
+        shape.setMargin(0.05);
+        shape.calculateLocalInertia(mass, localInertia);
+
+        let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
+          mass,
+          motionState,
+          shape,
+          localInertia
+        );
+
+        let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+
+        // rigidBody.setFriction(4);
+        // rigidBody.setRollingFriction(10);
+
+        this.dynamicsWorld.addRigidBody(rigidBody);
+      }
+
+      CreatePlayer() {
+        this.socket.emit("newPlayer");
+        this.socket.on("pos", (d) => {
+          const [id, pos] = d;
+          if (!(id in this.players)) {
+            console.log("new chalenger");
+            let scale = { x: 10, y: 10, z: 10 },
+              quat = { x: 0, y: 0, z: 0, w: 1 },
+              mass = 5,
+              position = { x: 0, y: 10, z: 0 },
+              height = 50,
+              radius = 0.3;
+
+            // const height = 1.3,
+            //  radius = 0.3,
+            //  mass = 5,
+            //  position = { x: 30, y: 10, z: 0 },
+            //  scale = { x: 10, y: 50, z: 10 },
+            //  quat = { x: 0, y: this.rotationView, z: 0, w: 1 };
+
+            //const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+            //const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            //const cube = (this.player = new THREE.Mesh(geometry, material));
+            //cube.position.set(...d);
+            //
+            //cube.name = "player";
+            ////this.player = cube;
+            //this.scene.add(cube);
+
+            if (!this.player) {
+              this.CreatePlayerLoad(pos, id);
+              console.log("main palyer");
+              //const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+              //const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+              //const cube = new THREE.Mesh(geometry, material);
+              //cube.position.set(...d);
+              //
+              //cube.name = "player";
+              ////this.player = cube;
+              //this.scene.add(cube);
+              //this.player = cube;
+              //this.players[id] = cube;
+              //let transform = new Ammo.btTransform();
+              //transform.setIdentity();
+              //transform.setOrigin(new Ammo.btVector3(pos));
+              //transform.setRotation(
+              //  new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
+              //);
+              //
+              //let motionState = new Ammo.btDefaultMotionState(transform);
+              //let localInertia = new Ammo.btVector3(0, 0, 0);
+              ////todo peut etre changer 0,5
+              //let shape = new Ammo.btBoxShape(
+              //  new Ammo.btVector3(scale.x, scale.y, scale.z)
+              //);
+              //
+              ////let shape = new Ammo.btCapsuleShape(radius, height);
+              //// shape.setMargin(0.05);
+              //// shape.calculateLocalInertia(mass, localInertia);
+              //
+              //let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
+              //  mass,
+              //  motionState,
+              //  shape,
+              //  localInertia
+              //);
+              //
+              //let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+              //
+              //rigidBody.setFriction(0);
+              //
+              //rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
+              //
+              //this.dynamicsWorld.addRigidBody(rigidBody);
+              //this.player.userData.physicsBody = rigidBody;
+              //this.rigidBodies.push(this.player);
+              ////this.rigidBody(cube, quat, scale, pos, mass);
+              //this.playerBB = new THREE.Box3(
+              //  new THREE.Vector3(),
+              //  new THREE.Vector3()
+              //);
+              //this.playerBB.setFromObject(this.player);
+            } else {
+              const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+              const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+              const cube = new THREE.Mesh(geometry, material);
+              cube.position.set(...d);
+
+              cube.name = "player";
+              //this.player = cube;
+              this.scene.add(cube);
+              this.players[id] = cube;
+            }
+
+            //this.GLTFLoader.load("/character (1).gltf", (object) => {
+            //  this.player = this.player = object;
+            //  // object.set(position.x, position.y, position.z);
+            //  // object.set(scale.x, scale.y, scale.z);
+            //  // object.set(quat.x, quat.y, quat.z, quat.w);
+            //  this.player.name = "player";
+            //  // setTimeout(() => {
+            //  //   console.log("1");
+            //  //   this.scene.add(object);
+            //  // }, 500);
+            //});
+
+            // this.GLTFloader.onLoadComplete = function () {
+            //   console.log("2");
+            //   this.scene.add(this.player);
+            // };
+          }
+
+          if (this.players[id]?.position) this.players[id].position.set(...pos);
+        });
+        this.socket.on("deletePlayer", (id) => {
+          this.scene.remove(this.players[id]);
+        });
+      }
+
+      rigidBody(object, quat, scale, pos, mass) {
+        let transform = new Ammo.btTransform();
+        transform.setIdentity();
+        transform.setOrigin(new Ammo.btVector3(pos));
+        transform.setRotation(
+          new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
+        );
+
+        let motionState = new Ammo.btDefaultMotionState(transform);
+        let localInertia = new Ammo.btVector3(0, 0, 0);
+        //todo peut etre changer 0,5
+        let shape = new Ammo.btBoxShape(
+          new Ammo.btVector3(scale.x, scale.y, scale.z)
+        );
+
+        //let shape = new Ammo.btCapsuleShape(radius, height);
+        // shape.setMargin(0.05);
+        // shape.calculateLocalInertia(mass, localInertia);
+
+        let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
+          mass,
+          motionState,
+          shape,
+          localInertia
+        );
+
+        let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+
+        rigidBody.setFriction(0);
+
+        rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
+
+        this.dynamicsWorld.addRigidBody(rigidBody);
+        object.userData.physicsBody = rigidBody;
+        this.rigidBodies.push(object);
+      }
+
+      CreatePlayerLoad(pos, id) {
+        //let position = { x: 0, y: 10, z: 0 },
+        //  scale = { x: 10, y: 10, z: 10 },
+        //  quat = { x: 0, y: 0, z: 0, w: 1 },
+        //  mass = 5,
+        //  height = 50,
+        //  radius = 0.3;
+        //
+        const height = 10,
+          radius = 10,
+          mass = 5,
+          scale = { x: 10, y: 10, z: 10 },
+          quat = { x: 0, y: 0, z: 0, w: 1 };
+        //
+        ////const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+        ////const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        ////const cube = (this.player = new THREE.Mesh(geometry, material));
+        ////cube.position.set(position.x, position.y, position.z);
+        //
+        ////cube.name = "player";
+        ////this.player = cube;
+        ////this.scene.add(this.player);
+        //
+        //this.FBXLoader.load("/character (1).gltf", (object) => {
+        //  this.player = this.player = object;
+        //  // object.set(position.x, position.y, position.z);
+        //  // object.set(scale.x, scale.y, scale.z);
+        //  // object.set(quat.x, quat.y, quat.z, quat.w);
+        //  this.player.name = "player";
+        //  // setTimeout(() => {
+        //  //   console.log("1");
+        //  //   this.scene.add(object);
+        //  // }, 500);
+        //});
+        //
+        //this.GLTFloader.onLoadComplete = function () {
+        //  console.log("2");
+        //  this.scene.add(this.player);
+        //};
+        //
+        //let transform = new Ammo.btTransform();
+        //transform.setIdentity();
+        //transform.setOrigin(
+        //  new Ammo.btVector3(position.x, position.y, position.z)
+        //);
+        //transform.setRotation(
+        //  new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
+        //);
+        //
+        //let motionState = new Ammo.btDefaultMotionState(transform);
+        //let localInertia = new Ammo.btVector3(0, 0, 0);
+        ////todo peut etre changer 0,5
+        //let shape = new Ammo.btBoxShape(
+        //  new Ammo.btVector3(scale.x, scale.y, scale.z)
+        //);
+        //
+        ////let shape = new Ammo.btCapsuleShape(radius, height);
+        //// shape.setMargin(0.05);
+        //// shape.calculateLocalInertia(mass, localInertia);
+        //
+        //let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
+        //  mass,
+        //  motionState,
+        //  shape,
+        //  localInertia
+        //);
+        //
+        //let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+        //
+        //rigidBody.setFriction(0);
+        //
+        //rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
+        //
+        //this.dynamicsWorld.addRigidBody(rigidBody);
+        //this.player.userData.physicsBody = rigidBody;
+        //this.rigidBodies.push(this.player);
+
+        this.FBXLoader.load(
+          "/character/shrek/source/Samba Dancing.fbx",
+          (fbx) => {
+            console.log(fbx);
+            this.player = fbx;
+            //this.player.rotation.set(0, this.rotationView, 0);
+            this.player.position.set(...pos);
+            this.player.scale.set(0.002, 0.002, 0.002);
+            this.player.name = "player";
+            //this.player = cube;
+            //this.scene.add(cube);
+            //this.player = cube;
+            this.players[id] = fbx;
+            this.mixer = new THREE.AnimationMixer(this.player);
+            // console.log(fbx);
+
+            if (fbx.animations[0]) {
+              const animationAction = this.mixer.clipAction(fbx.animations[0]);
+              //animationAction.play();
+              this.activeAction = animationAction;
+              this.animationActions.push(animationAction);
+            }
+
+            // this.setAction(animationAction);
+
+            // const action = this.mixer.clipAction(fbx.animations[0]);
+            // action.play();
+
+            this.scene.add(this.player);
+
+            let transform = new Ammo.btTransform();
+            transform.setIdentity();
+            transform.setOrigin(new Ammo.btVector3(...pos));
+            transform.setRotation(
+              new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
+            );
+
+            let motionState = new Ammo.btDefaultMotionState(transform);
+            let localInertia = new Ammo.btVector3(0, 0, 0);
+            //todo peut etre changer 0,5
+            let shape = new Ammo.btBoxShape(
+              new Ammo.btVector3(scale.x, scale.y, scale.z)
+            );
+
+            //let shape = new Ammo.btCapsuleShape(radius, height);
+            // shape.setMargin(0.05);
+            // shape.calculateLocalInertia(mass, localInertia);
+
+            let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
+              mass,
+              motionState,
+              shape,
+              localInertia
+            );
+
+            let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+
+            rigidBody.setFriction(0);
+
+            rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
+
+            this.dynamicsWorld.addRigidBody(rigidBody);
+            this.player.userData.physicsBody = rigidBody;
+            this.rigidBodies.push(this.player);
+            this.playerBB = new THREE.Box3(
+              new THREE.Vector3(),
+              new THREE.Vector3()
+            ).setFromObject(this.player);
+
+            // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
+            // console.log(this.player.rotation);
+
+            this.loadAction("/character/mutant/Idle.fbx", "idle");
+            this.loadAction("/character/mutant/Walking.fbx", "walk");
+            this.loadAction("/character/mutant/Jumping.fbx", "jump");
+            this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
+          },
+          undefined,
+          (error) => {
+            console.error(error);
+          }
+        );
+
+        // this.loader.load(
+        //   "/mutant/Idle.fbx",
+        //   (anim) => {
+        //     console.log(anim);
+        //     const animationAction = this.mixer.clipAction(anim.animations[0]);
+        //     this.animationActions.push(animationAction);
+        //     // animationsFolder.add(animations, "default");
+
+        //     // animationAction.play();
+
+        //     // this.setAction(animationAction);
+
+        //     // const action = this.mixer.clipAction(anim.animations[0]);
+        //     // action.play();
+        //     // animationsFolder.add(animations, "walking");
+        //     // console.log(fbx);
+        //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
+        //     // this.assets["walkAnim"] = fbx;
+        //     // this.zombieAnims = {};
+        //     // this.SetAnim("walk", this.assets["walkAnim"]);
+        //   },
+        //   undefined,
+        //   (error) => {
+        //     console.error(error);
+        //   }
+        // );
+
+        // this.loader.load(
+        //   "/mutant/Walking.fbx",
+        //   (fbx) => {
+        //     console.log(fbx);
+        //     const animationAction = this.mixer.clipAction(fbx.animations[0]);
+        //     this.animationActions.push(animationAction);
+        //     // const action = this.mixer.clipAction(fbx.animations[0]);
+        //     // action.play();
+        //     // animationsFolder.add(animations, "walking");
+        //     // console.log(fbx);
+        //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
+        //     // this.assets["walkAnim"] = fbx;
+        //     // this.zombieAnims = {};
+        //     // this.SetAnim("walk", this.assets["walkAnim"]);
+        //   },
+        //   undefined,
+        //   (error) => {
+        //     console.error(error);
+        //   }
+        // );
+
+        // this.SetAnim("idle", this.assets["idleAnim"]);
+        // this.SetAnim("run", this.assets["runAnim"]);
+        // this.SetAnim("attack", this.assets["attackAnim"]);
+        // this.SetAnim("die", this.assets["dieAnim"]);
+        setTimeout(() => {
+          this.modelReady = true;
+          console.log(this.animationActions);
+          console.log("model ready");
+        }, 2000);
+      }
+
+      // QueryJump() {
+      //   const dispatcher = this.dynamicsWorld.getDispatcher();
+      //   const numManifolds = dispatcher.getNumManifolds();
+
+      //   for (let i = 0; i < numManifolds; i++) {
+      //     const contactManifold = dispatcher.getManifoldByIndexInternal(i);
+      //     // console.log(contactManifold);
+      //     const rb0 = Ammo.castObject(
+      //       contactManifold.getBody0(),
+      //       Ammo.btRigidBody
+      //     );
+      //     const rb1 = Ammo.castObject(
+      //       contactManifold.getBody1(),
+      //       Ammo.btRigidBody
+      //     );
+
+      //     // console.log(this.player.userData.physicsBody);
+      //     // console.log(rb0);
+      //     // console.log(rb1);
+
+      //     if (
+      //       rb0 != this.player.userData.physicsBody &&
+      //       rb1 != this.player.userData.physicsBody
+      //     ) {
+      //       continue;
+      //     }
+
+      //     console.log("test");
+
+      //     const numContacts = contactManifold.getNumContacts();
+      //     // console.log(numContacts);
+
+      //     for (let j = 0; j < numContacts; j++) {
+      //       const contactPoint = contactManifold.getContactPoint(j);
+      //       // console.log(contactPoint);
+
+      //       const normal = contactPoint.get_m_normalWorldOnB();
+      //       this.tempVecJump.setValue(normal.x(), normal.y(), normal.z());
+      //       // console.log(this.tempVecJump);
+
+      //       if (rb1 == this.player.userData.physicsBody) {
+      //         this.tempVecJump.setValue(
+      //           -this.tempVecJump.x(),
+      //           -this.tempVecJump.y(),
+      //           -this.tempVecJump.z()
+      //         );
+      //       }
+
+      //       const angle = this.tempVecJump.dot(this.up);
+      //       this.canJump = angle > 0.5;
+
+      //       if (this.canJump) {
+      //         return;
+      //       }
+      //     }
+      //   }
+      // }
+
+      QueryJump() {
+        let dispatcher = this.dynamicsWorld.getDispatcher();
+        let numManifolds = dispatcher.getNumManifolds();
+
+        for (let i = 0; i < numManifolds; i++) {
+          let contactManifold = dispatcher.getManifoldByIndexInternal(i);
+          let numContacts = contactManifold.getNumContacts();
+
+          for (let j = 0; j < numContacts; j++) {
+            let contactPoint = contactManifold.getContactPoint(j);
+            let distance = contactPoint.getDistance();
+
+            if (distance < 0.1) {
+              this.canJump = true;
+              return;
+            }
+
+            // console.log({
+            //   manifoldIndex: i,
+            //   contactIndex: j,
+            //   distance: distance,
+            // });
+          }
+        }
+      }
+
+      // querryJumpStartAmmo() {
+      //   Ammo().then((Ammo) => {
+      //     Ammo = Ammo;
+      //     this.AmmoClone = Ammo;
+      //     this.querryJumpCreateAmmo(Ammo);
+      //   });
+      // }
+      //
+      // querryJumpCreateAmmo() {
+      //   this.QueryJump(Ammo);
+      // }
+
+      updatePhysics(timeElapsed) {
+        this.dynamicsWorld.stepSimulation(timeElapsed, 10);
+
+        for (let i = 0; i < this.rigidBodies.length; i++) {
+          let threeObject = this.rigidBodies[i];
+          // console.log(i);
+          // console.log(threeObject);
+          let ammoObject = threeObject.userData.physicsBody;
+          let ms = ammoObject.getMotionState();
+
+          if (ms) {
+            ms.getWorldTransform(this.TempTransform);
+            let pos = this.TempTransform.getOrigin();
+            let quat = this.TempTransform.getRotation();
+            threeObject.position.set(pos.x(), pos.y(), pos.z());
+            threeObject.quaternion.set(quat.x(), quat.y(), quat.z(), quat.w());
+            //if (this.seeAtRight) {
+            //  threeObject.quaternion.set(
+            //    quat.x(),
+            //    quat.y() * -1,
+            //    quat.z(),
+            //    quat.w()
+            //  );
+            //} else {
+            //  threeObject.quaternion.set(
+            //    quat.x(),
+            //    quat.y(),
+            //    quat.z(),
+            //    quat.w()
+            //  );
+            //}
+          }
+          //let angVel = this.player.userData.physicsBody.getAngularVelocity();
+          //this.player.userData.physicsBody.setAngularVelocity(
+          //  new Ammo.btVector3(angVel.x, angVel.y, angVel.z)
+          //);
+          this.QueryJump();
+        }
+      }
+
+      movePlayer() {
+        if (!this.player?.userData) return;
+        if (!this.player.userData?.physicsBody) return;
+        //console.log(this.player);
+        this.moveDir = new THREE.Vector3();
+        const forwardFactor = this._keys.moveBackward - this._keys.moveForward;
+        const rightFactor = this._keys.moveRight - this._keys.moveLeft;
+        const direction = this.moveDir
+          .set(rightFactor, 0.0, forwardFactor)
+          .normalize();
+
+        const velocity = this.player.userData.physicsBody.getLinearVelocity();
+
+        if (this.jump && this.canJump) {
+          //this.setAction(this.animationActions["jump"]);
+          velocity.setY(15);
+          this.canJump = false;
+        }
+
+        // if (rightFactor != 0 || forwardFactor != 0) {
+        //   this.socket.emit("pos", this.player.position.toArray());
+        // }
+
+        if (rightFactor != 0 || forwardFactor != 0) {
+          //console.log("e");
+          //this.player.rotation.y = Math.atan2(velocity.z(), velocity.x());
+          //this.player.rotation.y += Math.PI / 2;
+          this.setAction(this.animationActions["walk"]);
+        } else {
+          this.setAction(this.animationActions["idle"]);
+        }
+
+        // if(Input.GetKeyDown('Space') && this.physicsComponent.canJump){
+        //     velocity.setY(this.jumpVelocity);
+        //     this.physicsComponent.canJump = false;
+        // }
+
+        //this.Deccelerate(t);
+        //this.Accelarate(direction, t);
+
+        const moveVector = this.tempVec.copy(
+          new THREE.Vector3(rightFactor, 0, forwardFactor)
+        );
+
+        velocity.setX(moveVector.x * 4);
+        velocity.setZ(moveVector.z * 4);
+
+        // console.log(this.playerObject.userData.physicsBody);
+
+        //if (rightFactor != 0 || forwardFactor != 0) {
+        //  console.log(direction);
+        //  //console.log(this.player.userData.physicsBody.getAngularVelocity());
+        //  ///console.log(this.player.quaternion);
+        //  //const quaternion = new THREE.Quaternion();
+        //  let quaternion = new Ammo.btVector3(rightFactor, 0, forwardFactor);
+        //
+        //  //console.log(new Ammo.btVector3(rightFactor, 0, forwardFactor));
+        //  // let q = this.player.quaternion.copy().inverse();
+        //  //velocity.applyQuaternion(quaternion);
+        //  let angVel = this.player.userData.physicsBody.getAngularVelocity();
+        //  console.log(angVel.y());
+        //  this.player.userData.physicsBody.setAngularVelocity(
+        //    new Ammo.btVector3(0, angVel.y(), 0)
+        //  );
+        //}
+
+        this.player.userData.physicsBody.setLinearVelocity(velocity);
+        //let playerPosition = this.playerObject.position;
+
+        //this.camera.position.set(
+        //  playerPosition.x,
+        //  playerPosition.y + 20,
+        //  playerPosition.z + 40
+        //);
+        //this.camera.lookAt(this.playerObject.position);
+
+        //this.player.userData.physicsBody.setAngularVelocity(quaternion);
+
+        // const ms = this.playerObject.userData.physicsBody.getMotionState();
+        // if (ms) {
+        //   ms.getWorldTransform(this.transform);
+        //   const p = this.TempTransform.getOrigin();
+        //   this.player.position.set(p.x(), p.y() + this.yOffset, p.z());
+        //   this.player.rotation.set(0, -90, 0);
+        //   // this.camera.position.set(p.x(), p.y() + this.yOffset, p.z());
+        //   // this.parent.SetPosition(this.camera.position);
+        // }
+      }
+
+      // action(action) {
+      //   switch (action) {
+      //     case "idle":
+      //       this.setAction(this.animationActions[1]);
+      //       break;
+      //     case "run":
+      //       this.setAction(this.animationActions[2]);
+      //       break;
+      //     case "jump":
+      //       this.setAction(this.animationActions[3]);
+      //       break;
+      //     case "fall":
+      //       this.setAction(this.animationActions[4]);
+      //       break;
+      //     case "die":
+      //       this.setAction(this.animationActions[5]);
+      //       break;
+      //     case "attack":
+      //       this.setAction(this.animationActions[6]);
+      //       break;
+      //     case "hit":
+      //       this.setAction(this.animationActions[7]);
+      //       break;
+      //     case "dead":
+      //       this.setAction(this.animationActions[8]);
+      //       break;
+      //     // default:
+      //     //   this.setAction(this.animationActions[1]);
+      //     //   break;
+      //   }
+      // }
+
+      thirdPersonCameraUpdate(timeElapsed) {
+        if (!this.player) return;
+        const playerPosition = this.player.position;
+
+        const idealOffset = new THREE.Vector3(0, 30, 40);
+        idealOffset.add(this.player.position);
+        const idealLookat = new THREE.Vector3(0, 0, 0);
+        idealLookat.add(this.player.position);
+
+        // const t = 0.05;
+        // const t = 4.0 * timeElapsed;
+        const t = 1.0 - Math.pow(0.001, timeElapsed);
+
+        this.currentPosition.lerp(idealOffset, t);
+        this.currentLookat.lerp(idealLookat, t);
+
+        this.camera.position.copy(this.currentPosition);
+        this.camera.lookAt(this.currentLookat);
+
+        //this.camera.position.set(
+        //  playerPosition.x,
+        //  playerPosition.y + 20,
+        //  playerPosition.z + 40
+        //);
+      }
+
+      //update = () => {
+      //  //const currentFrame = this.scene.time.now
+      //  //if (this.previousFrame==null) {
+      //  //  this.previousFrame = currentFrame
+      //  //}
+      //
+      //  //if (!this.modelReady) return;
+      //  this.renderer.render(this.scene, this.camera);
+      //  // requestAnimationFrame(() => this.update());
+      //  this.delta = this.clock.getDelta() * 2;
+      //
+      //  //let timeElapsed = currentFrame -this.previousFrame
+      //  let timeElapsed = this.clock.getElapsedTime();
+      //  const timeElapsedS = timeElapsed * 0.001;
+      //
+      //  if (this.modelReady) {
+      //    this.mixer.update(timeElapsed);
+      //  }
+      //  //console.log(this.player.position);
+      //
+      //  this.thirdPersonCameraUpdate(timeElapsed);
+      //  this.movePlayer();
+      //
+      //  if (this.playerBB)
+      //    this.playerBB
+      //      .copy(this.player.geometry.boundingBox)
+      //      .applyMatrix4(this.player.matrixWorld);
+      //
+      //  // this.updateMovement();
+      //  // this.updateJump();
+      //
+      //  if (this.dynamicsWorld) this.updatePhysics(timeElapsed);
+      //
+      //  //if (this.mixer) {
+      //  //  // console.log(this.mixer.time);
+      //  //  this.mixer.update(timeElapsedS);
+      //  //}
+      //  this.animFrameId = window.requestAnimationFrame(this.update);
+      //};
+
+      update() {
+        //const currentFrame = this.scene.time.now
+        window.requestAnimationFrame((t) => {
+          if (!this.previousFrame) {
+            this.previousFrame = t;
+          }
+
+          //if (!this.modelReady) return;
+          // requestAnimationFrame(() => this.update());
+          this.delta = this.clock.getDelta() * 2;
+
+          let timeElapsed = t - this.previousFrame;
+          //let timeElapsed = this.clock.getElapsedTime();
+          const timeElapsedS = timeElapsed * 0.001;
+
+          if (this.mixer && this.modelReady) {
+            //this.animationActions[0].play()
+            //console.log(this.villagers["1.1"]);
+            //this.villagerActions[0].play();
+            this.mixer.update(this.delta);
+            //this.mixer.update(this.delta);
+          }
+          //console.log(this.player.position);
+
+          this.thirdPersonCameraUpdate(timeElapsedS);
+          this.movePlayer();
+          //this.moveVillagers();
+          this.Villagers.update();
+          //console.log(this.player.boundingBox);
+
+          if (this.playerBB)
+            this.playerBB
+              //.copy(this.player.geometry.boundingBox)
+              .applyMatrix4(this.player.matrixWorld);
+
+          // this.updateMovement();
+          // this.updateJump();
+
+          if (this.dynamicsWorld) this.updatePhysics(timeElapsedS);
+          this.renderer.render(this.scene, this.camera);
+
+          this.update();
+          //if (this.mixer) {
+          //  // console.log(this.mixer.time);
+          //  this.mixer.update(timeElapsedS);
+          //}
+        });
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      Ammo().then((lib) => {
+        Ammo = lib;
+        let app = new App();
+      });
+    });
+  </script>
+  <body>
+    <div id="info"></div>
+    <div id="gridSelector">
+      <button id="showBuildMenu">Build Menu</button>
+      <button id="showCollectMenu">Collect Menu</button>
+      <div id="buildMenu">
+        <button id="buildHouse">
+          <img src="/img/house.png" width="80px" />
+          <p class="buildable">
+            50<img src="/img/wood.png" width="30px" /> Build House
+          </p>
+        </button>
+      </div>
+      <div id="collectMenu">
+        <p id="noVillagerText">
+          You don't have esclaves. <br />You can build a house
+        </p>
+      </div>
+    </div>
+    <div id="resources">
+      <div id="wood">
+        <label for="">WOOD</label>
+        <img src="/img/wood.png" width="50" height="50" />
+        <label for="" id="woodCount">50</label>
+      </div>
+      <div id="stone">
+        <label for="">STONE</label>
+        <img src="/img/Andesite.png" width="50" height="50" />
+        <label for="" id="stoneCount">0</label>
+      </div>
+      <div id="iron">
+        <label for="">IRON</label>
+        <img src="/img/Iron_Ingot.png" width="50" height="50" />
+        <label for="" id="ironCount">0</label>
+      </div>
+      <div id="coal">
+        <label for="">COAL</label>
+        <img src="/img/Coal.png" width="50" height="50" />
+        <label for="" id="coalCount">0</label>
+      </div>
+    </div>
+    <div id="error"></div>
+    <div id="menu">
+      <h1>MULTI UNIVERS</h1>
+      <h2>ALL STAR</h2>
+      <button id="start_game">Start Game</button>
+      <div class="checkbox">
+        <input type="checkbox" name="Ipad" id="Ipad" />
+        <label for="Ipad">Ipad, Phone or other tactile player</label>
+      </div>
+    </div>
+    <div id="selectMenu">
+      <h1>Select your character</h1>
+      <div class="character">
+        <img
+          src="/character/shrek/shrek.png"
+          alt="character1"
+          height="100px"
+          width="100px"
+          id="shrek"
+        />
+        <p>L'orgre vert</p>
+        <img
+          src="/character/thanos/thanos.png"
+          alt="character2"
+          height="100px"
+          width="100px"
+          id="thanos"
+        />
+        <p>Le titan violet</p>
+      </div>
+    </div>
+  </body>
+</html>

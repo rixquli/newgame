@@ -1,0 +1,11 @@
+Model Information:
+* title:	A simple tree
+* source:	https://sketchfab.com/3d-models/a-simple-tree-2fb65079d3bd43a18c999e61c7d48618
+* author:	xxxaaa444 (https://sketchfab.com/xxxaaa444)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "A simple tree" (https://sketchfab.com/3d-models/a-simple-tree-2fb65079d3bd43a18c999e61c7d48618) by xxxaaa444 (https://sketchfab.com/xxxaaa444) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

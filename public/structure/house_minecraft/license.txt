@@ -1,0 +1,11 @@
+Model Information:
+* title:	House Minecraft
+* source:	https://sketchfab.com/3d-models/house-minecraft-011361141e8d4ff49a7f45b6d00c8114
+* author:	gabrielcaceres1904 (https://sketchfab.com/gabrielcaceres1904)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "House Minecraft" (https://sketchfab.com/3d-models/house-minecraft-011361141e8d4ff49a7f45b6d00c8114) by gabrielcaceres1904 (https://sketchfab.com/gabrielcaceres1904) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
