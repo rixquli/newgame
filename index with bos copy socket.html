@@ -141,12 +141,15 @@
       top: 12vh;
       background-color: chocolate;
       border-radius: 10px;
+      height: 100%;
     }
     #gridSelector > button {
       font-size: 1em;
     }
-    #collectMenu {
+    div#collectMenu {
       display: none;
+      height: 85%;
+      overflow: scroll;
     }
     #buildMenu > button {
       border: solid #000;
@@ -379,6 +382,12 @@
       }
     }
 
+    //class ShowResources {
+    //  constructor() {
+    //
+    //  }
+    //}
+
     class Villager {
       constructor(scene, loader) {
         this.scene = scene;
@@ -388,6 +397,8 @@
         this.villagerActions = [];
         this.clock = new THREE.Clock();
         this.villagerSpeed = 0.2;
+        this.activeAction = [];
+        this.lastAction = [];
         //this.id = id
         //this.villager = this.villagers[id]
         //this.createVillager(position, house);
@@ -413,12 +424,15 @@
                 const animationAction = this.mixer[house + "." + i].clipAction(
                   fbx.animations[1]
                 );
-                animationAction.play();
-                this.activeAction = animationAction;
-                this.villagerActions.push(animationAction);
-                this.villagerActions.push(
-                  this.mixer[house + "." + i].clipAction(fbx.animations[0])
-                );
+                //animationAction.play();
+                this.activeAction[house + "." + i] = animationAction;
+                this.villagerActions[house + "." + i] = [];
+                this.villagerActions[house + "." + i]["idle"] = this.mixer[
+                  house + "." + i
+                ].clipAction(fbx.animations[2]);
+                this.villagerActions[house + "." + i]["walk"] = this.mixer[
+                  house + "." + i
+                ].clipAction(fbx.animations[0]);
               }
               this.scene.add(this.villagers[house + "." + i]);
             },
@@ -514,6 +528,8 @@
         //this.setAction(this.villagerActions[0]);
         if (!this.villagers[id]?.job) return;
         if (this.villagers[id].job == "Is not working") return;
+        let directionX = 0,
+          directionZ = 0;
 
         let mesh1 = {
           x: this.villagers[id].position.x,
@@ -527,15 +543,19 @@
         var dx = Math.abs(mesh1.x - mesh2.x);
         if (mesh1.x > mesh2.x) {
           this.villagers[id].position.x -= Math.min(dx, this.villagerSpeed);
+          directionX = -90;
         } else if (mesh1.x < mesh2.x) {
           this.villagers[id].position.x += Math.min(dx, this.villagerSpeed);
+          directionX = 90;
         }
 
         var dz = Math.abs(mesh1.z - mesh2.z);
         if (mesh1.z > mesh2.z) {
           this.villagers[id].position.z -= Math.min(dz, this.villagerSpeed);
+          directionZ = 180;
         } else if (mesh1.z < mesh2.z) {
           this.villagers[id].position.z += Math.min(dz, this.villagerSpeed);
+          directionZ = 0;
         }
 
         if (mesh1.x == mesh2.x && mesh1.z == mesh2.z) {
@@ -546,11 +566,35 @@
             this.villagers[id].stay = true;
             //this.villagerStay(id);
           }
-          this.setAction(this.villagerActions[1]);
+          this.setAction(this.villagerActions[id]["idle"], id);
         } else {
-          this.setAction(this.villagerActions[0]);
+          //console.log((directionX + directionZ) / 2);
+          if (this.villagers[id].returnHouse) {
+            this.villagers[id].lookAt(...this.villagers[id].housePos);
+            this.villagers[id].rotation.x = 0;
+            this.villagers[id].rotation.z = 0;
+            //this.villagers[id].rotation.y =
+            //  ((((directionX + directionZ) / 2) * Math.PI) / 180) * -1;
+          } else {
+            this.villagers[id].lookAt(...this.villagers[id].collectTarget);
+            this.villagers[id].rotation.x = 0;
+            this.villagers[id].rotation.z = 0;
+            //this.villagers[id].rotation.y =
+            //  (((directionX + directionZ) / 2) * Math.PI) / 180;
+          }
+
+          this.setAction(this.villagerActions[id]["walk"], id);
         }
       }
+
+      //startTimer(id) {
+      //  this.time = 0;
+      //  this.time = setInterval(() => {
+      //    if (this.villagers[id].stay == true) return;
+      //    this.time += 100;
+      //  }, 100);
+      //
+      //}
 
       work() {
         if (this.houseN == 1) return;
@@ -574,6 +618,10 @@
                 i + "." + j,
                 this.villagers[i + "." + j].collectTarget
               );
+              //if (!this.startingTimer) {
+              //  this.startingTimer = true;
+              //  this.startTimer(i + "." + j);
+              //}
             }
             if (
               this.villagers[i + "." + j].returnHouse == true &&
@@ -597,18 +645,19 @@
       }
 
       addResources(value, nbr) {
+        if (!document.querySelector(`#${value}Count`)?.textContent) return;
         document.querySelector(`#${value}Count`).textContent =
           Number(document.querySelector(`#${value}Count`).textContent) + nbr;
       }
 
-      setAction(toAction) {
-        //console.log(toAction);
+      setAction(toAction, id) {
         // toAction.play();
-        if (toAction != this.activeAction && toAction != undefined) {
-          this.lastAction = this.activeAction;
-          this.activeAction = toAction;
+        if (toAction != this.activeAction[id] && toAction != undefined) {
+          //console.log(toAction);
+          this.lastAction[id] = this.activeAction[id];
+          this.activeAction[id] = toAction;
           //lastAction.stop()
-          this.lastAction.fadeOut(1);
+          this.lastAction[id].fadeOut(1);
           toAction.reset();
           toAction.fadeIn(1);
           toAction.play();
@@ -618,10 +667,19 @@
       update() {
         this.delta = this.clock.getDelta();
 
-        if (this.mixer && this.modelReady) {
-          this.mixer.forEach((e) => {
-            e.update(this.delta);
-          });
+        if (this.mixer && this.modelReady == true) {
+          for (let i = 1; i < this.houseN; i++) {
+            if (!this.mixer[i + ".3"]) return;
+            this.mixer[i + ".1"].update(this.delta);
+            this.mixer[i + ".2"].update(this.delta);
+            this.mixer[i + ".3"].update(this.delta);
+          }
+          //for (const e of this.mixer) {
+          //  e.update(this.delta)
+          //}
+          //this.mixer.forEach((e) => {
+          //  e.update(this.delta);
+          //});
           //this.animationActions[0].play()
           //console.log(this.villagers["1.1"]);
           //console.log(this.villagerActions[0].isRunning());
@@ -696,6 +754,8 @@
         this.villagerSpeed = 0.4;
         this.villagerActions = [];
         this.mixer = [];
+
+        this.playerRotation = -1;
 
         this.init();
         // this.createRender();
@@ -1022,7 +1082,7 @@
           this.lastAction = this.activeAction;
           this.activeAction = toAction;
           //lastAction.stop()
-          this.lastAction.fadeOut(1);
+          this.lastAction.fadeOut(0.5);
           toAction.reset();
           toAction.fadeIn(1);
           toAction.play();
@@ -1538,7 +1598,7 @@
               this.addSeedRandom();
             }
             let random = this.seedRandom[this.structureSeed];
-            console.log(random);
+            //console.log(random);
             this.average(random);
 
             if (random < this.randomP.houseVillager) {
@@ -1799,7 +1859,7 @@
             // };
           }
           //if (this.player == this.players[id])
-            this.players[id].position.set(...pos);
+          if (this.players[id]?.position) this.players[id].position.set(...pos);
         });
         this.socket.on("deletePlayer", (id) => {
           this.scene.remove(this.players[id]);
@@ -1920,27 +1980,32 @@
         //this.player.userData.physicsBody = rigidBody;
         //this.rigidBodies.push(this.player);
 
-        this.FBXLoader.load(
-          "/character/shrek/source/Samba Dancing.fbx",
+        this.GLTFLoader.load(
+          "/character/gentle_stickman/scene.gltf",
           (fbx) => {
             console.log(fbx);
-            this.player = fbx;
+            this.player = fbx.scene;
             //this.player.rotation.set(0, this.rotationView, 0);
             this.player.position.set(...pos);
-            this.player.scale.set(0.002, 0.002, 0.002);
+            this.player.scale.set(7, 7, 7);
             this.player.name = "player";
             //this.player = cube;
             //this.scene.add(cube);
             //this.player = cube;
-            this.players[id] = fbx;
+            this.players[id] = fbx.scene;
             this.mixer = new THREE.AnimationMixer(this.player);
             // console.log(fbx);
 
             if (fbx.animations[0]) {
               const animationAction = this.mixer.clipAction(fbx.animations[0]);
-              //animationAction.play();
+              animationAction.play();
               this.activeAction = animationAction;
-              this.animationActions.push(animationAction);
+              this.animationActions["idle"] = this.mixer.clipAction(
+                fbx.animations[0]
+              );
+              this.animationActions["walk"] = this.mixer.clipAction(
+                fbx.animations[1]
+              );
             }
 
             // this.setAction(animationAction);
@@ -1992,10 +2057,10 @@
             // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
             // console.log(this.player.rotation);
 
-            this.loadAction("/character/mutant/Idle.fbx", "idle");
-            this.loadAction("/character/mutant/Walking.fbx", "walk");
-            this.loadAction("/character/mutant/Jumping.fbx", "jump");
-            this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
+            //this.loadAction("/character/mutant/Idle.fbx", "idle");
+            //this.loadAction("/character/mutant/Walking.fbx", "walk");
+            //this.loadAction("/character/mutant/Jumping.fbx", "jump");
+            //this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
           },
           undefined,
           (error) => {
@@ -2059,7 +2124,7 @@
           this.modelReady = true;
           console.log(this.animationActions);
           console.log("model ready");
-        }, 2000);
+        }, 5000);
       }
 
       // QueryJump() {
@@ -2173,7 +2238,11 @@
             let pos = this.TempTransform.getOrigin();
             let quat = this.TempTransform.getRotation();
             threeObject.position.set(pos.x(), pos.y(), pos.z());
-            threeObject.quaternion.set(quat.x(), quat.y(), quat.z(), quat.w());
+            //threeObject.quaternion.set(quat.x(), this.playerRotation, quat.z(), quat.w());
+            threeObject.quaternion.x = quat.x();
+            threeObject.quaternion.z = quat.z();
+            //threeObject.quaternion.w = quat.w();
+            //console.log(quat.y());
             //if (this.seeAtRight) {
             //  threeObject.quaternion.set(
             //    quat.x(),
@@ -2245,23 +2314,93 @@
         velocity.setX(moveVector.x * 4);
         velocity.setZ(moveVector.z * 4);
 
-        // console.log(this.playerObject.userData.physicsBody);
-
         //if (rightFactor != 0 || forwardFactor != 0) {
-        //  console.log(direction);
-        //  //console.log(this.player.userData.physicsBody.getAngularVelocity());
-        //  ///console.log(this.player.quaternion);
-        //  //const quaternion = new THREE.Quaternion();
-        //  let quaternion = new Ammo.btVector3(rightFactor, 0, forwardFactor);
+        //this.player.rotation.set(0, 90*Math.PI/, 0);
+        //this.playerRotation += 0.01
+        //console.log(this.playerRotation);
+        //-1 left
+        //+1 right
+        //0.7 bottom right
+        //console.log(direction);
+        //console.log(this.player.userData.physicsBody.getAngularVelocity());
+        ///console.log(this.player.quaternion);
+        //const quaternion = new THREE.Quaternion();
+        //quaternion = new Ammo.btVector3(rightFactor, 0, forwardFactor);
+        //console.log(quaternion.y());
+        //console.log(new Ammo.btVector3(rightFactor, 0, forwardFactor));
+        // let q = this.player.quaternion.copy().inverse();
+        //velocity.applyQuaternion(quaternion);
+        //let angVel = this.player.userData.physicsBody.getAngularVelocity();
+        //console.log(angVel.y());
+        //this.player.userData.physicsBody.setAngularVelocity(
+        //  new Ammo.btVector3(0, -1, 0)
+        //);
+        //} else {
+        //  this.playerRotation = 0;
+        //}
+
+        //let directionX = rightFactor * 90;
+        //if (forwardFactor == -1) {
+        //  let directionZ = 180;
+        //} else if (forwardFactor == 1) {
+        //  let directionZ = 0;
+        //}
+        //directionX = (rightFactor * Math.PI) / 180;
+        //directionZ = (forwardFactor * Math.PI) / 180;
+
+        if (rightFactor == 1) {
+          if (forwardFactor == 1) {
+            this.player.rotation.set(0, Math.PI / (135 / 45), 0);
+          } else if (forwardFactor == -1) {
+            this.player.rotation.set(0, Math.PI / 1.5, 0);
+          } else {
+            this.player.rotation.set(0, Math.PI / (90 / 45), 0);
+          }
+        } else if (rightFactor == -1) {
+          if (forwardFactor == 1) {
+            this.player.rotation.set(0, Math.PI / (-135 / 45), 0);
+          } else if (forwardFactor == -1) {
+            this.player.rotation.set(0, Math.PI / -1.5, 0);
+          } else {
+            this.player.rotation.set(0, Math.PI / (-90 / 45), 0);
+          }
+        } else if (forwardFactor == -1) {
+          this.player.rotation.set(0, Math.PI, 0);
+        } else if (forwardFactor == 1) {
+          this.player.rotation.set(0, 0, 0);
+        }
+        //if (forwardFactor == 1) {
+        //  if (rightFactor == 1) {
+        //    this.player.rotation.set(0, Math.PI / (-135 / 45), 0);
+        //  } else if (rightFactor == -1) {
+        //    this.player.rotation.set(0, Math.PI / (45 / 45), 0);
+        //  }
+        //} else if (forwardFactor == -1) {
+        //  if (rightFactor == 1) {
+        //    this.player.rotation.set(0, Math.PI / (-135 / 45), 0);
+        //  } else if (rightFactor == -1) {
+        //    this.player.rotation.set(0, Math.PI / (-45 / 45), 0);
+        //  }
+        //}
+
+        // console.log(this.playerObject.userData.physicsBody);
+        //switch (rightFactor) {
+        //  case -1:
+        //    this.player.rotation.set(0, Math.PI / (-90 / 45), 0);
+        //    break;
         //
-        //  //console.log(new Ammo.btVector3(rightFactor, 0, forwardFactor));
-        //  // let q = this.player.quaternion.copy().inverse();
-        //  //velocity.applyQuaternion(quaternion);
-        //  let angVel = this.player.userData.physicsBody.getAngularVelocity();
-        //  console.log(angVel.y());
-        //  this.player.userData.physicsBody.setAngularVelocity(
-        //    new Ammo.btVector3(0, angVel.y(), 0)
-        //  );
+        //  case 1:
+        //    this.player.rotation.set(0, Math.PI / (90 / 45), 0);
+        //    break;
+        //}
+        //switch (forwardFactor) {
+        //  case -1:
+        //    this.player.rotation.set(0, Math.PI / (-180 / 45), 0);
+        //    break;
+        //
+        //  case 1:
+        //    this.player.rotation.set(0, Math.PI / (180 / 45), 0);
+        //    break;
         //}
 
         this.player.userData.physicsBody.setLinearVelocity(velocity);
@@ -2394,7 +2533,7 @@
 
           //if (!this.modelReady) return;
           // requestAnimationFrame(() => this.update());
-          this.delta = this.clock.getDelta() * 2;
+          this.delta = this.clock.getDelta();
 
           let timeElapsed = t - this.previousFrame;
           //let timeElapsed = this.clock.getElapsedTime();
@@ -2465,7 +2604,7 @@
       <div id="wood">
         <label for="">WOOD</label>
         <img src="/img/wood.png" width="50" height="50" />
-        <label for="" id="woodCount">50</label>
+        <label for="" id="woodCount">500</label>
       </div>
       <div id="stone">
         <label for="">STONE</label>
