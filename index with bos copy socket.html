@@ -560,7 +560,10 @@
             if (!this.villagers[i + "." + j]?.job) return;
             if (this.villagers[i + "." + j].job == "Is not working") return;
 
-            if (this.villagers[i + "." + j].stay == true && !this.villagers[i + "." + j].returnHouse) {
+            if (
+              this.villagers[i + "." + j].stay == true &&
+              !this.villagers[i + "." + j].returnHouse
+            ) {
               this.villagerStay(i + "." + j);
             }
             if (
@@ -585,7 +588,7 @@
               this.villagers[i + "." + j].returnHouse == true &&
               this.villagers[i + "." + j].stay == true
             ) {
-              this.addResources(this.villagers[i + "." + j].jobType, 5)
+              this.addResources(this.villagers[i + "." + j].jobType, 5);
               this.villagers[i + "." + j].returnHouse = false;
               this.villagers[i + "." + j].stay = false;
             }
@@ -596,7 +599,7 @@
       addResources(value, nbr) {
         document.querySelector(`#${value}Count`).textContent =
           Number(document.querySelector(`#${value}Count`).textContent) + nbr;
-      }      
+      }
 
       setAction(toAction) {
         //console.log(toAction);
@@ -616,9 +619,9 @@
         this.delta = this.clock.getDelta();
 
         if (this.mixer && this.modelReady) {
-          this.mixer.forEach((e)=>{
-            e.update(this.delta)
-          })
+          this.mixer.forEach((e) => {
+            e.update(this.delta);
+          });
           //this.animationActions[0].play()
           //console.log(this.villagers["1.1"]);
           //console.log(this.villagerActions[0].isRunning());
@@ -664,6 +667,7 @@
         this.tempVec = new THREE.Vector3();
 
         this.player = null;
+        this.playerIsLoading = false;
         // moveDirection = { left: 0, right: 0, forward: 0, back: 0 };
         this.STATE = { DISABLE_DEACTIVATION: 4 };
 
@@ -1686,6 +1690,7 @@
           const [id, pos] = d;
           if (!(id in this.players)) {
             console.log("new chalenger");
+            console.log(id);
             let scale = { x: 10, y: 10, z: 10 },
               quat = { x: 0, y: 0, z: 0, w: 1 },
               mass = 5,
@@ -1709,7 +1714,8 @@
             ////this.player = cube;
             //this.scene.add(cube);
 
-            if (!this.player) {
+            if (!this.playerIsLoading) {
+              this.playerIsLoading = true;
               this.CreatePlayerLoad(pos, id);
               console.log("main palyer");
               //const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
@@ -1763,6 +1769,7 @@
               //);
               //this.playerBB.setFromObject(this.player);
             } else {
+              console.log("other");
               const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
               const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
               const cube = new THREE.Mesh(geometry, material);
@@ -1791,8 +1798,8 @@
             //   this.scene.add(this.player);
             // };
           }
-
-          if (this.players[id]?.position) this.players[id].position.set(...pos);
+          //if (this.player == this.players[id])
+            this.players[id].position.set(...pos);
         });
         this.socket.on("deletePlayer", (id) => {
           this.scene.remove(this.players[id]);

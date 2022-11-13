@@ -15,7 +15,8 @@ app.get("/", (req, res) => {
 
 class ConnectedUser {
   constructor(socket) {
-    this.id = socket.id;
+    //this.id = socket.id;
+    this.id = USERS.length;
     this.pos = [
       Math.floor(Math.random() * 20),
       19,
@@ -39,15 +40,19 @@ class ConnectedUser {
 }
 
 let USERS = [];
+let USERSID = []
 
 io.on("connection", (socket) => {
   console.log("login");
   socket.on("newPlayer", () => {
-    USERS[socket.id]=new ConnectedUser(socket)
+    //USERS[socket.id] = new ConnectedUser(socket);
+    USERS.push(new ConnectedUser(socket));
+    USERSID[socket.id] = USERS.length-1
   });
   socket.on("disconnect", () => {
     console.log("disconnect");
-    delete USERS[socket.id]
+    let index = USERSID[socket.id]
+    delete USERS[index];
     USERS.forEach((e) => {
       e.socket.emit("deletePlayer", socket.id);
       //this.socket.emit("pos", [e.id, e.pos]);
