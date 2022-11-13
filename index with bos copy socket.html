@@ -61,7 +61,10 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      background-color: black;
+      background-image: url("/img/image_accueil_jeu.jpg");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: cover;
       text-align: center;
       display: flex;
       align-items: center;
@@ -938,6 +941,7 @@
           //this.yAtOrigin = Annuaire.yAtOrigin;
           //let path = Annuaire.path;
           //this.load(path);
+          this.socket.emit("joinParty", e.target.id);
           document.getElementById("selectMenu").style.visibility = "hidden";
           this.StartGame();
         });
@@ -947,6 +951,7 @@
           //this.yAtOrigin = Annuaire.yAtOrigin;
           //let path = Annuaire.path;
           //this.load(path);
+          this.socket.emit("joinParty", e.target.id);
           document.getElementById("selectMenu").style.visibility = "hidden";
           this.StartGame();
         });
@@ -1201,12 +1206,8 @@
         let obj = this.scene.getObjectByName("click");
         if (!obj || obj.collectable == false) return;
 
-        console.log(
-          Math.round(this.playerBB.distanceToPoint(obj.position.clone()) * 10) /
-            10
-        );
         if (
-          Math.round(this.playerBB.distanceToPoint(obj.position.clone()) * 10) /
+          Math.round(this.player.position.clone().distanceTo(obj.position.clone()) * 10) /
             10 <
           30
         ) {
@@ -1711,12 +1712,12 @@
         });
 
         let blockPlane = new THREE.Mesh(geometry, material);
-        blockPlane.position.set(0, -30, 0);
+        blockPlane.position.set(0, -33, 0);
         this.scene.add(blockPlane);
 
         let transform = new Ammo.btTransform();
         transform.setIdentity();
-        transform.setOrigin(new Ammo.btVector3(0, -30, 0));
+        transform.setOrigin(new Ammo.btVector3(0, -33, 0));
         transform.setRotation(
           new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
         );
@@ -1724,7 +1725,7 @@
         let motionState = new Ammo.btDefaultMotionState(transform);
         let localInertia = new Ammo.btVector3(0, 0, 0);
         let shape = new Ammo.btBoxShape(
-          new Ammo.btVector3(x * 20 * 0.5, -3 * 0.5, z * 20 * 0.5)
+          new Ammo.btVector3(x * 20 * 0.5, 3 * 0.5, z * 20 * 0.5)
         );
         shape.setMargin(0.05);
         shape.calculateLocalInertia(mass, localInertia);
@@ -1746,6 +1747,9 @@
 
       CreatePlayer() {
         this.socket.emit("newPlayer");
+        //this.socket.on("test", (e) => {
+        //  console.log(e);
+        //});
         this.socket.on("pos", (d) => {
           const [id, pos] = d;
           if (!(id in this.players)) {
@@ -1838,6 +1842,7 @@
               cube.name = "player";
               //this.player = cube;
               this.scene.add(cube);
+              console.log(id);
               this.players[id] = cube;
             }
 
@@ -1862,6 +1867,8 @@
           if (this.players[id]?.position) this.players[id].position.set(...pos);
         });
         this.socket.on("deletePlayer", (id) => {
+          console.log(id);
+          console.log(this.players[id]);
           this.scene.remove(this.players[id]);
         });
       }
@@ -1914,7 +1921,7 @@
         const height = 10,
           radius = 10,
           mass = 5,
-          scale = { x: 10, y: 10, z: 10 },
+          scale = { x: 10, y: 3, z: 10 },
           quat = { x: 0, y: 0, z: 0, w: 1 };
         //
         ////const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
@@ -2049,10 +2056,10 @@
             this.dynamicsWorld.addRigidBody(rigidBody);
             this.player.userData.physicsBody = rigidBody;
             this.rigidBodies.push(this.player);
-            this.playerBB = new THREE.Box3(
-              new THREE.Vector3(),
-              new THREE.Vector3()
-            ).setFromObject(this.player);
+            //this.playerBB = new THREE.Box3(
+            //  new THREE.Vector3(),
+            //  new THREE.Vector3()
+            //).setFromObject(this.player);
 
             // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
             // console.log(this.player.rotation);
@@ -2554,10 +2561,10 @@
           this.Villagers.update();
           //console.log(this.player.boundingBox);
 
-          if (this.playerBB)
-            this.playerBB
-              //.copy(this.player.geometry.boundingBox)
-              .applyMatrix4(this.player.matrixWorld);
+          //if (this.playerBB)
+          //  this.playerBB
+          //  .applyMatrix4(this.player.matrixWorld);
+            //.copy(this.player.geometry.boundingBox)
 
           // this.updateMovement();
           // this.updateJump();

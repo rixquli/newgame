@@ -16,7 +16,7 @@ app.get("/", (req, res) => {
 class ConnectedUser {
   constructor(socket) {
     //this.id = socket.id;
-    this.id = USERS.length;
+    this.id = socket.id;
     this.pos = [
       Math.floor(Math.random() * 20),
       19,
@@ -24,6 +24,7 @@ class ConnectedUser {
     ];
     this.socket = socket;
     this.socket.on("pos", (d) => {
+      
       this.pos = [...d];
       this.spamEveryone();
     });
@@ -58,6 +59,9 @@ io.on("connection", (socket) => {
       //this.socket.emit("pos", [e.id, e.pos]);
     });
   });
+  //socket.on("joinParty", (e)=>{
+  //  socket.join(e)
+  //})
 });
 
 http.listen(port, () => {
