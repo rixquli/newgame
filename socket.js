@@ -23,8 +23,10 @@ class ConnectedUser {
       Math.floor(Math.random() * 20),
     ];
     this.socket = socket;
+    this.room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
+    console.log(this.room);
+    
     this.socket.on("pos", (d) => {
-      
       this.pos = [...d];
       this.spamEveryone();
     });
@@ -41,18 +43,21 @@ class ConnectedUser {
 }
 
 let USERS = [];
-let USERSID = []
+let USERSID = [];
 
 io.on("connection", (socket) => {
   console.log("login");
+  socket.on("joinParty", (e)=>{
+    socket.join(e)
+  })
   socket.on("newPlayer", () => {
     //USERS[socket.id] = new ConnectedUser(socket);
     USERS.push(new ConnectedUser(socket));
-    USERSID[socket.id] = USERS.length-1
+    USERSID[socket.id] = USERS.length - 1;
   });
   socket.on("disconnect", () => {
     console.log("disconnect");
-    let index = USERSID[socket.id]
+    let index = USERSID[socket.id];
     delete USERS[index];
     USERS.forEach((e) => {
       e.socket.emit("deletePlayer", socket.id);

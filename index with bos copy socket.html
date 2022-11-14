@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>World of Capitalist</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   </head>
   <style>
@@ -121,13 +121,17 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      background-color: wheat;
+      background-color: rgb(0, 195, 255);
       text-align: center;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       visibility: hidden;
+    }
+    #partyList {
+      width: 80%;
+      background-color: wheat;
     }
     #info {
       position: fixed;
@@ -421,6 +425,14 @@
               this.villagers[house + "." + i].job = "Is not working";
               this.villagers[house + "." + i].housePos = position;
 
+              let new_mtl = new THREE.MeshPhongMaterial({
+                color: 0x000000,
+              });
+
+              this.villagers[house + "." + i].traverse((o) => {
+                o.material = new_mtl;
+              });
+
               this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
 
               if (fbx.animations[0]) {
@@ -605,7 +617,7 @@
           for (let j = 1; j < 4; j++) {
             //this.setAction(this.villagerActions[0]);
             if (!this.villagers[i + "." + j]?.job) return;
-            if (this.villagers[i + "." + j].job == "Is not working") return;
+            //if (this.villagers[i + "." + j].job == "Is not working") return
 
             if (
               this.villagers[i + "." + j].stay == true &&
@@ -935,26 +947,28 @@
       //}
 
       showSelectMenu(visible = true) {
-        document.querySelector("#shrek").addEventListener("click", (e) => {
-          //const Annuaire = new annuaire(e.target.id);
-          //this.scale = Annuaire.scale;
-          //this.yAtOrigin = Annuaire.yAtOrigin;
-          //let path = Annuaire.path;
-          //this.load(path);
-          this.socket.emit("joinParty", e.target.id);
-          document.getElementById("selectMenu").style.visibility = "hidden";
-          this.StartGame();
+        document.querySelectorAll(".startGame").forEach((e) => {
+          e.addEventListener("click", (e) => {
+            //const Annuaire = new annuaire(e.target.id);
+            //this.scale = Annuaire.scale;
+            //this.yAtOrigin = Annuaire.yAtOrigin;
+            //let path = Annuaire.path;
+            //this.load(path);
+            this.socket.emit("joinParty", e.target.id);
+            document.getElementById("selectMenu").style.visibility = "hidden";
+            this.StartGame();
+          });
         });
-        document.querySelector("#thanos").addEventListener("click", (e) => {
-          //const Annuaire = new annuaire(e.target.id);
-          //this.scale = Annuaire.scale;
-          //this.yAtOrigin = Annuaire.yAtOrigin;
-          //let path = Annuaire.path;
-          //this.load(path);
-          this.socket.emit("joinParty", e.target.id);
-          document.getElementById("selectMenu").style.visibility = "hidden";
-          this.StartGame();
-        });
+        //document.querySelector("#thanos").addEventListener("click", (e) => {
+        //  //const Annuaire = new annuaire(e.target.id);
+        //  //this.scale = Annuaire.scale;
+        //  //this.yAtOrigin = Annuaire.yAtOrigin;
+        //  //let path = Annuaire.path;
+        //  //this.load(path);
+        //  this.socket.emit("joinParty", e.target.id);
+        //  document.getElementById("selectMenu").style.visibility = "hidden";
+        //  this.StartGame();
+        //});
 
         // img.forEach((e) => {
         //   e.addEventListener("click", (e) => this.load(e));
@@ -1207,7 +1221,9 @@
         if (!obj || obj.collectable == false) return;
 
         if (
-          Math.round(this.player.position.clone().distanceTo(obj.position.clone()) * 10) /
+          Math.round(
+            this.player.position.clone().distanceTo(obj.position.clone()) * 10
+          ) /
             10 <
           30
         ) {
@@ -1996,6 +2012,7 @@
             this.player.position.set(...pos);
             this.player.scale.set(7, 7, 7);
             this.player.name = "player";
+
             //this.player = cube;
             //this.scene.add(cube);
             //this.player = cube;
@@ -2069,7 +2086,15 @@
             //this.loadAction("/character/mutant/Jumping.fbx", "jump");
             //this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
           },
-          undefined,
+          (e) => {
+            console.log(e);
+            console.log(e.loaded / e.total);
+            if (e.loaded / e.total == 1) {
+              setTimeout(() => {
+                this.modelReady = true;
+              }, 2000);
+            }
+          },
           (error) => {
             console.error(error);
           }
@@ -2127,11 +2152,11 @@
         // this.SetAnim("run", this.assets["runAnim"]);
         // this.SetAnim("attack", this.assets["attackAnim"]);
         // this.SetAnim("die", this.assets["dieAnim"]);
-        setTimeout(() => {
-          this.modelReady = true;
-          console.log(this.animationActions);
-          console.log("model ready");
-        }, 5000);
+        //setTimeout(() => {
+        //  this.modelReady = true;
+        //  console.log(this.animationActions);
+        //  console.log("model ready");
+        //}, 5000);
       }
 
       // QueryJump() {
@@ -2546,7 +2571,7 @@
           //let timeElapsed = this.clock.getElapsedTime();
           const timeElapsedS = timeElapsed * 0.001;
 
-          if (this.mixer && this.modelReady) {
+          if (this.mixer && this.modelReady && this.player) {
             //this.animationActions[0].play()
             //console.log(this.villagers["1.1"]);
             //this.villagerActions[0].play();
@@ -2564,7 +2589,7 @@
           //if (this.playerBB)
           //  this.playerBB
           //  .applyMatrix4(this.player.matrixWorld);
-            //.copy(this.player.geometry.boundingBox)
+          //.copy(this.player.geometry.boundingBox)
 
           // this.updateMovement();
           // this.updateJump();
@@ -2631,16 +2656,22 @@
     </div>
     <div id="error"></div>
     <div id="menu">
-      <h1>MULTI UNIVERS</h1>
-      <h2>ALL STAR</h2>
-      <button id="start_game">Start Game</button>
+      <h1>The World of Captalits Conquerors</h1>
+      <h2>Discover, Build and Fight
+      </h2>
+      <button id="start_game">Jump in the World</button>
       <div class="checkbox">
         <input type="checkbox" name="Ipad" id="Ipad" />
         <label for="Ipad">Ipad, Phone or other tactile player</label>
       </div>
     </div>
     <div id="selectMenu">
-      <h1>Select your character</h1>
+      <div id="partyList">Party
+      </div>
+      <div class="createParty">
+        <button class="startGame">Create your party</button>
+      </div>
+      <h1>Join Party</h1>
       <div class="character">
         <img
           src="/character/shrek/shrek.png"
@@ -2648,16 +2679,8 @@
           height="100px"
           width="100px"
           id="shrek"
+          class="startGame"
         />
-        <p>L'orgre vert</p>
-        <img
-          src="/character/thanos/thanos.png"
-          alt="character2"
-          height="100px"
-          width="100px"
-          id="thanos"
-        />
-        <p>Le titan violet</p>
       </div>
     </div>
   </body>
