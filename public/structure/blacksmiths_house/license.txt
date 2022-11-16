@@ -1,0 +1,11 @@
+Model Information:
+* title:	blacksmith's house
+* source:	https://sketchfab.com/3d-models/blacksmiths-house-3954b5dc409349b28e550566a57cf564
+* author:	annakhobta (https://sketchfab.com/annakhobta)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "blacksmith's house" (https://sketchfab.com/3d-models/blacksmiths-house-3954b5dc409349b28e550566a57cf564) by annakhobta (https://sketchfab.com/annakhobta) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
