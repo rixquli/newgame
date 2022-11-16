@@ -24,8 +24,8 @@ class ConnectedUser {
     ];
     this.socket = socket;
     this.room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
-    console.log(this.room);
-    
+    //console.log(this.room);
+
     this.socket.on("pos", (d) => {
       this.pos = [...d];
       this.spamEveryone();
@@ -36,8 +36,14 @@ class ConnectedUser {
     this.socket.emit("pos", [this.id, this.pos]);
 
     USERS.forEach((e) => {
-      e.socket.emit("pos", [this.id, this.pos]);
-      this.socket.emit("pos", [e.id, e.pos]);
+      if(!io.sockets.adapter.sids[e.socket.id])return
+      if (
+        Object.keys(io.sockets.adapter.sids[e.socket.id])[1] ==
+        Object.keys(io.sockets.adapter.sids[this.socket.id])[1]
+      ) {
+        e.socket.to(this.room).emit("pos", [this.id, this.pos]);
+        this.socket.emit("pos", [e.id, e.pos]);
+      }
     });
   }
 }
@@ -46,10 +52,14 @@ let USERS = [];
 let USERSID = [];
 
 io.on("connection", (socket) => {
+  console.log(
+    Object.keys(io.sockets.adapter.rooms).filter((e) => e.startsWith("party/")=== true)
+  );
+  socket.emit("partyList", Object.keys(io.sockets.adapter.rooms).filter((e) => e.startsWith("party/")=== true));
   console.log("login");
-  socket.on("joinParty", (e)=>{
-    socket.join(e)
-  })
+  socket.on("joinParty", (e) => {
+    socket.join("party/" + e);
+  });
   socket.on("newPlayer", () => {
     //USERS[socket.id] = new ConnectedUser(socket);
     USERS.push(new ConnectedUser(socket));
