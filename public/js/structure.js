@@ -32,7 +32,7 @@ if (random < this.randomP.houseVillager) {
     x,
     z,
     0xcccccc,
-    "img/Andesite.png",
+    "img/andesite.png",
     "stone"
   );
   this.loadStructure("stylized__rock/scene.gltf", x, z, 40);
