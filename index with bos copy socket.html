@@ -178,6 +178,8 @@
       #buildMenu {
         display: flex;
         flex-direction: column;
+        height: 85%;
+        overflow: scroll;
       }
       #buildMenu > button {
         border: solid #000;
@@ -265,6 +267,21 @@
         position: fixed;
         bottom: 10px;
       }
+      button.startJoinGame {
+        color: cornflowerblue;
+        margin: 0;
+      }
+      div#partyList {
+        gap: 10px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10px;
+      }
+      .party {
+        border: solid;
+        border-radius: 10px;
+        gap: 10px;
+      }
     </style>
     <style>
       body {
@@ -314,6 +331,7 @@
       import { FBXLoader } from "/js/FBXLoader.js";
       import { FontLoader } from "/js/FontLoader.js";
       import { TextGeometry } from "/js/TextGeometry.js";
+      //import * as HOUSE from "/structure/house/01_medieval_house_low_poly.glb"
       //https://unpkg.com/three@0.141.0/examples/jsm/geometries/TextGeometry.js
       //https://unpkg.com/three@0.141.0/examples/jsm/curves/NURBSUtils.js
 
@@ -800,7 +818,7 @@
                 this.villagers[house + "." + i].stay = false;
                 this.villagers[house + "." + i].returnHouse = false;
 
-                let new_mtl = new THREE.MeshPhongMaterial({
+                let new_mtl = new THREE.MeshBasicMaterial({
                   color: 0x000000,
                 });
 
@@ -932,7 +950,7 @@
           const result = solver.solve();
           e.path[1].children[0].style = result.filter;
           console.log(result);
-          let new_mtl = new THREE.MeshPhongMaterial({
+          let new_mtl = new THREE.MeshBasicMaterial({
             color: new THREE.Color(
               parseInt(e.target.value.replace("#", "0x"), 16)
             ),
@@ -997,7 +1015,7 @@
           } to House  n°${e.target.getAttribute("villagerid").split(".")[0]}`;
           this.villagers[e.target.getAttribute("villagerid")].collectTarget = [
             this.scene.getObjectByName("click").position.x,
-            -28,
+            -25,
             this.scene.getObjectByName("click").position.z,
           ];
           this.villagers[e.target.getAttribute("villagerid")].jobType =
@@ -1073,14 +1091,14 @@
             //console.log((directionX + directionZ) / 2);
             if (this.villagers[id].returnHouse) {
               this.villagers[id].lookAt(...this.villagers[id].housePos);
-              this.villagers[id].rotation.x = 0;
-              this.villagers[id].rotation.z = 0;
+              //this.villagers[id].rotation.x = 0;
+              //this.villagers[id].rotation.z = 0;
               //this.villagers[id].rotation.y =
               //  ((((directionX + directionZ) / 2) * Math.PI) / 180) * -1;
             } else {
-              this.villagers[id].lookAt(this.villagers[id].collectTarget);
-              this.villagers[id].rotation.x = 0;
-              this.villagers[id].rotation.z = 0;
+              this.villagers[id].lookAt(...this.villagers[id].collectTarget);
+              //this.villagers[id].rotation.x = 0;
+              //this.villagers[id].rotation.z = 0;
               //this.villagers[id].rotation.y =
               //  (((directionX + directionZ) / 2) * Math.PI) / 180;
             }
@@ -1266,6 +1284,12 @@
               return e.slice(6);
             });
           });
+          this.socket.on("structure", (d) => {
+            console.log(Object.keys(d).map((_) => d[_]));
+            let structure = Object.keys(d).map((_) => d[_]);
+
+            this.loadStructure(...structure);
+          });
 
           this.init();
           // this.createRender();
@@ -1324,25 +1348,105 @@
         //}
 
         addEvent() {
+          //e,unit, unitN,path,x,y,z,scale,house,rotaion
           document
             .querySelector("#showBuildMenu")
             .addEventListener("click", (e) => this.toggleMenu(e), false);
           document
             .querySelector("#showCollectMenu")
             .addEventListener("click", (e) => this.toggleMenu(e), false);
+          //document
+          //  .querySelector("#buildHouse")
+          //  .addEventListener("click", (e) => this.buildHouse(e), false);
           document
             .querySelector("#buildHouse")
-            .addEventListener("click", (e) => this.buildHouse(e), false);
+            .addEventListener(
+              "click",
+              (e) =>
+                this.buildStructure(
+                  e,
+                  "wood",
+                  50,
+                  "house/01_medieval_house_low_poly.glb",
+                  0,
+                  -23,
+                  0,
+                  2,
+                  true,
+                  Math.PI / 2
+                ),
+              false
+            );
           document
             .querySelector("#buildMine")
-            .addEventListener("click", (e) => this.buildMine(e), false);
+            .addEventListener(
+              "click",
+              (e) =>
+                this.buildStructure(
+                  e,
+                  "stone",
+                  50,
+                  "low-poly_mine/scene.gltf",
+                  0.5,
+                  -28,
+                  0.5,
+                  1,
+                  false,
+                  -Math.PI / 2
+                ),
+              false
+            );
           document
             .querySelector("#buildBlacksmithHouse")
             .addEventListener(
               "click",
-              (e) => this.buildBlacksmithHouse(e),
+              (e) =>
+                this.buildStructure(
+                  e,
+                  "stone",
+                  50,
+                  "blacksmiths_house/scene.gltf",
+                  2,
+                  -28,
+                  0,
+                  0.1,
+                  false,
+                  Math.PI / 2
+                ),
               false
             );
+          document
+            .querySelector("#buildShop")
+            .addEventListener(
+              "click",
+              (e) =>
+                this.buildStructure(
+                  e,
+                  "stone",
+                  50,
+                  "small_store/scene.gltf",
+                  0,
+                  -28,
+                  0,
+                  0.23,
+                  false,
+                  0
+                ),
+              false
+            );
+          //document
+          //  .querySelector("#buildMine")
+          //  .addEventListener("click", (e) => this.buildMine(e), false);
+          //document
+          //  .querySelector("#buildBlacksmithHouse")
+          //  .addEventListener(
+          //    "click",
+          //    (e) => this.buildBlacksmithHouse(e),
+          //    false
+          //  );
+          //document
+          //  .querySelector("#buildShop")
+          //  .addEventListener("click", (e) => this.buildShop(e), false);
         }
 
         toggleMenu(e) {
@@ -1576,6 +1680,8 @@
 
           this.renderer = new THREE.WebGLRenderer({
             antialias: true,
+            alpha: false,
+            powerPreference: "high-performance",
           });
           //this.render.setPixelRatio(window.devicePixelRatio);
           this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1836,7 +1942,7 @@
         }
 
         mouseControls() {
-          const cursor_material = new THREE.MeshLambertMaterial({
+          const cursor_material = new THREE.MeshPhongMaterial({
             transparent: true,
             opacity: 0,
             color: 0xc0392b,
@@ -1881,83 +1987,146 @@
           document.addEventListener("pointerup", (e) => this.mouseUp(e), false);
         }
 
-        buildHouse(e) {
+        //buildHouse(e) {
+        //  e.stopPropagation();
+        //  e.preventDefault();
+        //  if (document.querySelector("#woodCount").textContent >= 50) {
+        //    document.querySelector("#woodCount").textContent =
+        //      Number(document.querySelector("#woodCount").textContent) - 50;
+        //    let x = Number(document.querySelector("#x").innerHTML);
+        //    let z = Number(document.querySelector("#z").innerHTML);
+        //    this.loadStructure(
+        //      "house/01_medieval_house_low_poly.glb",
+        //      x,
+        //      -23,
+        //      z,
+        //      2,
+        //      true,
+        //      Math.PI / 2
+        //    );
+        //    this.Villagers.createVillager(
+        //      [x * 20, -25, z * 20 - 5],
+        //      this.houseN
+        //    );
+        //
+        //    this.houseN = this.houseN + 1;
+        //    this.Villagers.houseN = this.houseN;
+        //  } else {
+        //    document.querySelector("#error").innerHTML =
+        //      "<p>No enought Wood</p>";
+        //  }
+        //}
+        //
+        //buildMine(e) {
+        //  e.stopPropagation();
+        //  e.preventDefault();
+        //  if (document.querySelector("#stoneCount").textContent >= 50) {
+        //    document.querySelector("#stoneCount").textContent =
+        //      Number(document.querySelector("#stoneCount").textContent) - 50;
+        //    let x = Number(document.querySelector("#x").innerHTML);
+        //    let z = Number(document.querySelector("#z").innerHTML);
+        //    this.loadStructure(
+        //      "low-poly_mine/scene.gltf",
+        //      x + 0.5,
+        //      -28,
+        //      z + 0.5,
+        //      1,
+        //      false,
+        //      -Math.PI / 2
+        //    );
+        //    //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
+        //
+        //    //this.houseN = this.houseN + 1;
+        //    //this.Villagers.houseN = this.houseN;
+        //  } else {
+        //    document.querySelector("#error").innerHTML =
+        //      "<p>No enought Stone</p>";
+        //  }
+        //}
+        //buildBlacksmithHouse(e) {
+        //  e.stopPropagation();
+        //  e.preventDefault();
+        //  if (document.querySelector("#stoneCount").textContent >= 50) {
+        //    document.querySelector("#stoneCount").textContent =
+        //      Number(document.querySelector("#stoneCount").textContent) - 50;
+        //    let x = Number(document.querySelector("#x").innerHTML);
+        //    let z = Number(document.querySelector("#z").innerHTML);
+        //    this.loadStructure(
+        //      "blacksmiths_house/scene.gltf",
+        //      x + 2,
+        //      -28,
+        //      z,
+        //      0.1,
+        //      false,
+        //      Math.PI / 2
+        //    );
+        //    //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
+        //
+        //    //this.houseN = this.houseN + 1;
+        //    //this.Villagers.houseN = this.houseN;
+        //  } else {
+        //    document.querySelector("#error").innerHTML =
+        //      "<p>No enought Stone</p>";
+        //  }
+        //}
+        //buildShop(e) {
+        //  e.stopPropagation();
+        //  e.preventDefault();
+        //  if (document.querySelector("#stoneCount").textContent >= 50) {
+        //    document.querySelector("#stoneCount").textContent =
+        //      Number(document.querySelector("#stoneCount").textContent) - 50;
+        //    let x = Number(document.querySelector("#x").innerHTML);
+        //    let z = Number(document.querySelector("#z").innerHTML);
+        //    let y = -28;
+        //    this.socket.emit("structure", {
+        //      path: "small_store/scene.gltf",
+        //      x: x,
+        //      y: y,
+        //      z: z,
+        //      scale: 0.23,
+        //      house: false,
+        //      rotation: 0,
+        //    });
+        //    let emit = {
+        //      path: "small_store/scene.gltf",
+        //      x: x,
+        //      y: y,
+        //      z: z,
+        //      scale: 0.23,
+        //      house: false,
+        //      rotation: 0,
+        //    };
+        //    console.log(Object.keys(emit).map((_) => emit[_]));
+        //
+        //    this.loadStructure("small_store/scene.gltf", x, y, z, 0.23, false);
+        //    //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
+        //
+        //    //this.houseN = this.houseN + 1;
+        //    //this.Villagers.houseN = this.houseN;
+        //  } else {
+        //    document.querySelector("#error").innerHTML =
+        //      "<p>No enought Stone</p>";
+        //  }
+        //}
+        buildStructure(e, unit, unitN, path, x, y, z, scale, house, rotation) {
           e.stopPropagation();
           e.preventDefault();
-          if (document.querySelector("#woodCount").textContent >= 50) {
-            document.querySelector("#woodCount").textContent =
-              Number(document.querySelector("#woodCount").textContent) - 50;
-            let x = Number(document.querySelector("#x").innerHTML);
-            let z = Number(document.querySelector("#z").innerHTML);
-            this.loadStructure(
-              "house/01_medieval_house_low_poly.glb",
-              x,
-              -23,
-              z,
-              2,
-              true,
-              Math.PI / 2
-            );
-            this.Villagers.createVillager(
-              [x * 20, -25, z * 20 - 5],
-              this.houseN
-            );
-
-            this.houseN = this.houseN + 1;
-            this.Villagers.houseN = this.houseN;
-          } else {
-            document.querySelector("#error").innerHTML =
-              "<p>No enought Wood</p>";
-          }
-        }
-
-        buildMine(e) {
-          e.stopPropagation();
-          e.preventDefault();
-          if (document.querySelector("#stoneCount").textContent >= 50) {
-            document.querySelector("#stoneCount").textContent =
-              Number(document.querySelector("#stoneCount").textContent) - 50;
-            let x = Number(document.querySelector("#x").innerHTML);
-            let z = Number(document.querySelector("#z").innerHTML);
-            this.loadStructure(
-              "low-poly_mine/scene.gltf",
-              x + 0.5,
-              -28,
-              z + 0.5,
-              1,
-              false,
-              -Math.PI / 2
-            );
-            //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
-
-            //this.houseN = this.houseN + 1;
-            //this.Villagers.houseN = this.houseN;
-          } else {
-            document.querySelector("#error").innerHTML =
-              "<p>No enought Stone</p>";
-          }
-        }
-        buildBlacksmithHouse(e) {
-          e.stopPropagation();
-          e.preventDefault();
-          if (document.querySelector("#stoneCount").textContent >= 50) {
-            document.querySelector("#stoneCount").textContent =
-              Number(document.querySelector("#stoneCount").textContent) - 50;
-            let x = Number(document.querySelector("#x").innerHTML);
-            let z = Number(document.querySelector("#z").innerHTML);
-            this.loadStructure(
-              "blacksmiths_house/scene.gltf",
-              x + 2,
-              -28,
-              z,
-              0.1,
-              false,
-              Math.PI / 2
-            );
-            //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
-
-            //this.houseN = this.houseN + 1;
-            //this.Villagers.houseN = this.houseN;
+          console.log(`#${unit}Count`);
+          if (document.querySelector(`#${unit}Count`).textContent >= unitN) {
+            document.querySelector(`#${unit}Count`).textContent =
+              Number(document.querySelector(`#${unit}Count`).textContent) -
+              unitN;
+            let x_ = Number(document.querySelector("#x").innerHTML);
+            let z_ = Number(document.querySelector("#z").innerHTML);
+            this.socket.emit("structure", {
+              path: path,
+              x: x_ + x,
+              y: y,
+              z: z_ + z,
+              scale: scale,
+              house: house,
+              rotation: rotation,
+            });
           } else {
             document.querySelector("#error").innerHTML =
               "<p>No enought Stone</p>";
@@ -2130,6 +2299,15 @@
               console.error(error);
             }
           );
+          if (house) {
+            this.Villagers.createVillager(
+              [x * 20, -25, z * 20 - 5],
+              this.houseN
+            );
+
+            this.houseN = this.houseN + 1;
+            this.Villagers.houseN = this.houseN;
+          }
         }
 
         setupGraphicsWolrd() {
@@ -2204,6 +2382,11 @@
           //  this.seedRandom.push(+this.sSeed.charAt(i));
           //}
 
+          this.textureCubeGrass = this.loader.load("img/Cartoon_green.jpg");
+          this.textureCubeRock = this.loader.load("img/andesite.png");
+          this.textureCubeFarm = this.loader.load(
+            "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png"
+          );
           for (let x = -10; x < 10; x++) {
             for (let z = -10; z < 10; z++) {
               //let random = Math.floor(Math.random() * 100);
@@ -2218,22 +2401,22 @@
               this.average(random);
 
               if (random < this.randomP.houseVillager) {
-                this.createFloor(x, z, "img/grass.png", "houseVillager");
+                this.createFloor(x, z, this.textureCubeGrass, "houseVillager");
 
                 this.loadStructure("house_minecraft/scene.gltf", x, -28, z, 20);
                 //this.createVillager(Ammo = AmmoClone, x,z)
               } else if (random < this.randomP.stone) {
                 console.log("stone");
-                this.createFloor(x, z, "img/andesite.png", "stone");
+                this.createFloor(x, z, this.textureCubeRock, "stone");
                 this.loadStructure(
                   "rock/mossy_rocks_low_poly.glb",
-                  x,
+                  x + 0.1,
                   -30,
                   z,
                   0.01
                 );
               } else if (random < this.randomP.wood) {
-                this.createFloor(x, z, "img/grass.png", "wood");
+                this.createFloor(x, z, this.textureCubeGrass, "wood");
                 this.loadStructure(
                   "tree_low-poly_3d_model/scene.gltf",
                   x,
@@ -2242,21 +2425,12 @@
                   0.035
                 );
               } else if (random < this.randomP.farmWithWheat) {
-                this.createFloor(
-                  x,
-                  z,
-                  "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png",
-                  "wheat"
-                );
+                this.createFloor(x, z, this.textureCubeFarm, "wheat");
                 //this.loadStructure("source/Field of wheat--eWhaaKNh755/FieldOfWheat(1).gltf", x, z, 1.2);
               } else if (random < this.randomP.farmWithoutWheat) {
-                this.createFloor(
-                  x,
-                  z,
-                  "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png"
-                );
+                this.createFloor(x, z, this.textureCubeFarm);
               } else {
-                this.createFloor(x, z, "img/grass.png", "plain");
+                this.createFloor(x, z, this.textureCubeGrass, "plain");
               }
               this.structureSeed++;
             }
@@ -2264,46 +2438,46 @@
           console.log("true average = ", this.totalAdd / this.total);
         }
 
-        createVillager(position, house) {
-          for (let i = 1; i < 4; i++) {
-            this.FBXLoader.load(
-              "/character/stickman/source/Simple_Character.fbx",
-              (fbx) => {
-                this.villagers[house + "." + i] = fbx;
-                console.log(position);
-                this.villagers[house + "." + i].position.set(...position);
-                this.villagers[house + "." + i].scale.set(0.03, 0.03, 0.03);
-                this.villagers[house + "." + i].house = house;
-                this.villagers[house + "." + i].job = "Is not working";
-                this.villagers[house + "." + i].housePos = position;
-                this.villagers[house + "." + i].stay = false;
-                this.villagers[house + "." + i].returnHouse = false;
-
-                this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
-
-                if (fbx.animations[0]) {
-                  const animationAction = this.mixer[
-                    house + "." + i
-                  ].clipAction(fbx.animations[1]);
-                  animationAction.play();
-                  this.activeAction = animationAction;
-                  this.villagerActions.push(animationAction);
-                }
-                this.scene.add(this.villagers[house + "." + i]);
-              },
-              undefined,
-              (error) => {
-                console.error(error);
-              }
-            );
-            setTimeout(() => {
-              this.modelReady = true;
-              console.log(this.villagerActions);
-              console.log("model ready");
-            }, 500);
-          }
-          this.addVillagerMenu();
-        }
+        //createVillager(position, house) {
+        //  for (let i = 1; i < 4; i++) {
+        //    this.FBXLoader.load(
+        //      "/character/stickman/source/Simple_Character.fbx",
+        //      (fbx) => {
+        //        this.villagers[house + "." + i] = fbx;
+        //        console.log(position);
+        //        this.villagers[house + "." + i].position.set(...position);
+        //        this.villagers[house + "." + i].scale.set(0.03, 0.03, 0.03);
+        //        this.villagers[house + "." + i].house = house;
+        //        this.villagers[house + "." + i].job = "Is not working";
+        //        this.villagers[house + "." + i].housePos = position;
+        //        this.villagers[house + "." + i].stay = false;
+        //        this.villagers[house + "." + i].returnHouse = false;
+        //
+        //        this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
+        //
+        //        if (fbx.animations[0]) {
+        //          const animationAction = this.mixer[
+        //            house + "." + i
+        //          ].clipAction(fbx.animations[1]);
+        //          animationAction.play();
+        //          this.activeAction = animationAction;
+        //          this.villagerActions.push(animationAction);
+        //        }
+        //        this.scene.add(this.villagers[house + "." + i]);
+        //      },
+        //      undefined,
+        //      (error) => {
+        //        console.error(error);
+        //      }
+        //    );
+        //    setTimeout(() => {
+        //      this.modelReady = true;
+        //      console.log(this.villagerActions);
+        //      console.log("model ready");
+        //    }, 500);
+        //  }
+        //  this.addVillagerMenu();
+        //}
 
         createFloor(x, z, texture, property) {
           let position = { x: 20 * x, y: -30, z: 20 * z },
@@ -2311,11 +2485,16 @@
             quat = { x: 0, y: 0, z: 0, w: 1 },
             mass = 0;
 
-          const textureCube = this.loader.load(texture);
+          //const textureCube = this.loader.load(texture);
+          //var materials = [
+          //new THREE.MeshLambertMaterial({
+          //    map: this.loader.load(texture)
+          // })
+          // ];
 
           const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
           const material = new THREE.MeshBasicMaterial({
-            map: textureCube,
+            map: texture,
           });
 
           let blockPlane = new THREE.Mesh(geometry, material);
@@ -2325,6 +2504,8 @@
           this.scene.add(blockPlane);
 
           this.clickableObjs.push(blockPlane);
+          blockPlane.matrixAutoUpdate = false;
+          blockPlane.updateMatrix();
         }
 
         CreateSolidFloor(x, z) {
@@ -2332,7 +2513,7 @@
             mass = 0;
 
           const geometry = new THREE.BoxGeometry(x * 0, 3, z * 0);
-          const material = new THREE.MeshLambertMaterial({
+          const material = new THREE.MeshBasicMaterial({
             transparent: true,
             opacity: 0,
             color: 0x000000,
@@ -3407,13 +3588,6 @@
     </script>
   </head>
   <body>
-    <script>
-      function send(x, y, speed, angle) {
-        var data = { x: x, y: y, speed: speed, angle: angle };
-        data = JSON.stringify(data);
-        console.log(data);
-      }
-    </script>
     <script></script>
     <div id="info"></div>
     <div id="gridSelector">
@@ -3437,6 +3611,12 @@
           <p class="buildable">
             50<img src="/img/andesite.png" width="30px" /> Build Blacksmith
             House
+          </p>
+        </button>
+        <button id="buildShop">
+          <img src="/img/shop-icon.png" width="80px" />
+          <p class="buildable">
+            50<img src="/img/andesite.png" width="30px" /> Build Shop
           </p>
         </button>
       </div>

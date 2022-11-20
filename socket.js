@@ -25,37 +25,73 @@ class ConnectedUser {
     this.socket = socket;
     this.room = Object.keys(io.sockets.adapter.sids[socket.id])[1];
     //console.log(this.room);
+    this.structure = [];
 
     this.socket.on("pos", (d) => {
       this.pos = [...d];
       this.spamEveryone();
     });
+    this.socket.on("structure", (e) => {
+      if (!STRUCTURE[this.room]) {
+        STRUCTURE[this.room] = [];
+        STRUCTURE[this.room].push(JSON.parse(JSON.stringify(e)));
+      } else STRUCTURE[this.room].push(JSON.parse(JSON.stringify(e)));
+      this.buildStructure(e);
+    });
     this.spamEveryone();
+    this.buildAllStructure();
   }
   spamEveryone() {
     this.socket.emit("pos", [this.id, this.pos]);
 
     USERS.forEach((e) => {
-      if(!io.sockets.adapter.sids[e.socket.id])return
+      if (!io.sockets.adapter.sids[e.socket.id]) return;
       if (
         Object.keys(io.sockets.adapter.sids[e.socket.id])[1] ==
         Object.keys(io.sockets.adapter.sids[this.socket.id])[1]
       ) {
-        e.socket.to(this.room).emit("pos", [this.id, this.pos]);
-        this.socket.emit("pos", [e.id, e.pos]);
+        e.socket.emit("pos", [this.id, this.pos]);
+        //this.socket.emit("pos", [e.id, e.pos]);
       }
     });
+  }
+  buildStructure(d) {
+    USERS.forEach((e) => {
+      if (!io.sockets.adapter.sids[e.socket.id]) return;
+      if (
+        Object.keys(io.sockets.adapter.sids[e.socket.id])[1] ==
+        Object.keys(io.sockets.adapter.sids[this.socket.id])[1]
+      ) {
+        e.socket.emit("structure", d);
+        //this.socket.emit("pos", [e.id, e.pos]);
+      }
+    });
+  }
+  buildAllStructure() {
+    if (STRUCTURE[this.room]) {
+      STRUCTURE[this.room].forEach((e)=>{
+        this.socket.emit("structure", e);
+      })
+    }
   }
 }
 
 let USERS = [];
 let USERSID = [];
+let STRUCTURE = [];
 
 io.on("connection", (socket) => {
   console.log(
-    Object.keys(io.sockets.adapter.rooms).filter((e) => e.startsWith("party/")=== true)
+    Object.keys(io.sockets.adapter.rooms).filter(
+      (e) => e.startsWith("party/") === true
+    )
   );
-  socket.emit("partyList", Object.keys(io.sockets.adapter.rooms).filter((e) => e.startsWith("party/")=== true));
+  socket.emit(
+    "partyList",
+    Object.keys(io.sockets.adapter.rooms).filter(
+      (e) => e.startsWith("party/") === true
+    )
+  );
   console.log("login");
   socket.on("joinParty", (e) => {
     socket.join("party/" + e);
