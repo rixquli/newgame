@@ -3598,7 +3598,7 @@
 
             if (this.dynamicsWorld) this.updatePhysics(timeElapsedS);
             this.renderer.render(this.scene, this.camera);
-
+            this.previousFrame = t;
             this.update();
             //if (this.mixer) {
             //  // console.log(this.mixer.time);
