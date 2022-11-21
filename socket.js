@@ -51,7 +51,7 @@ class ConnectedUser {
         Object.keys(io.sockets.adapter.sids[this.socket.id])[1]
       ) {
         e.socket.emit("pos", [this.id, this.pos]);
-        //this.socket.emit("pos", [e.id, e.pos]);
+        this.socket.emit("pos", [e.id, e.pos]);
       }
     });
   }

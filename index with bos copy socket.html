@@ -282,6 +282,12 @@
         border-radius: 10px;
         gap: 10px;
       }
+      .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -5px;
+        margin-left: -5px;
+      }
     </style>
     <style>
       body {
@@ -315,7 +321,6 @@
     type="text/javascript"
     src="/node_modules/physijs/src/physi.js"
   ></script> -->
-
     <script type="module">
       //import * as THREE from "three";
 
@@ -1278,6 +1283,9 @@
           this.rotationCanvas = 0;
           this.rotationCanvasEnable = false;
 
+          this.seed = 69;
+          this.mapSize = { x: 20, z: 20 };
+
           this.playerRotation = -1;
           this.socket.on("partyList", (data) => {
             this.partyList = data.map((e) => {
@@ -1373,7 +1381,8 @@
                   0,
                   2,
                   true,
-                  Math.PI / 2
+                  Math.PI / 2,
+                  "house"
                 ),
               false
             );
@@ -1392,7 +1401,8 @@
                   0.5,
                   1,
                   false,
-                  -Math.PI / 2
+                  -Math.PI / 2,
+                  "mine"
                 ),
               false
             );
@@ -1411,7 +1421,8 @@
                   0,
                   0.1,
                   false,
-                  Math.PI / 2
+                  Math.PI / 2,
+                  "blacksmithHouse"
                 ),
               false
             );
@@ -1430,7 +1441,8 @@
                   0,
                   0.23,
                   false,
-                  0
+                  0,
+                  "shop"
                 ),
               false
             );
@@ -1682,12 +1694,14 @@
             antialias: true,
             alpha: false,
             powerPreference: "high-performance",
+            //depthBuffer: false
           });
           //this.render.setPixelRatio(window.devicePixelRatio);
           this.renderer.setSize(window.innerWidth, window.innerHeight);
           document
             .querySelector("#three")
             .appendChild(this.renderer.domElement);
+          //this.renderer.physicallyCorrectLights = true
 
           this.scene = new THREE.Scene();
 
@@ -2108,10 +2122,25 @@
         //      "<p>No enought Stone</p>";
         //  }
         //}
-        buildStructure(e, unit, unitN, path, x, y, z, scale, house, rotation) {
+        buildStructure(
+          e,
+          unit,
+          unitN,
+          path,
+          x,
+          y,
+          z,
+          scale,
+          house,
+          rotation,
+          prop
+        ) {
           e.stopPropagation();
           e.preventDefault();
           console.log(`#${unit}Count`);
+          if (this.scene.getObjectByName("click").prop != "plain")
+            return (document.querySelector("#error").innerHTML =
+              "<p>No Good Place</p>");
           if (document.querySelector(`#${unit}Count`).textContent >= unitN) {
             document.querySelector(`#${unit}Count`).textContent =
               Number(document.querySelector(`#${unit}Count`).textContent) -
@@ -2126,6 +2155,8 @@
               scale: scale,
               house: house,
               rotation: rotation,
+              prop: prop,
+              block: this.scene.getObjectByName("click").id,
             });
           } else {
             document.querySelector("#error").innerHTML =
@@ -2283,7 +2314,7 @@
           //this.loadStructure();
         }
 
-        loadStructure(structure, x, y, z, scale, house, rotation) {
+        loadStructure(structure, x, y, z, scale, house, rotation, prop, block) {
           this.GLTFLoader.load(
             "structure/" + structure,
             (gltf) => {
@@ -2292,6 +2323,9 @@
               structure.scale.set(scale, scale, scale);
               if (rotation) structure.rotation.y = rotation;
               if (house) structure.name = `house${this.houseN}`;
+              if (prop) this.scene.getObjectById(block).prop = prop;
+              structure.matrixAutoUpdate = false;
+              structure.updateMatrix();
               this.scene.add(structure);
             },
             undefined,
@@ -2372,7 +2406,6 @@
           this.total = 0;
           this.totalAdd = 0;
 
-          this.seed = 69;
           this.generatingSeed = new Math.seedrandom(this.seed);
           this.seedRandom = [];
           //this.sSeed = this.generatingSeed.toString();
@@ -2387,8 +2420,8 @@
           this.textureCubeFarm = this.loader.load(
             "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png"
           );
-          for (let x = -10; x < 10; x++) {
-            for (let z = -10; z < 10; z++) {
+          for (let x = this.mapSize.x * -0.5; x < this.mapSize.x * 0.5; x++) {
+            for (let z = this.mapSize.z * -0.5; z < this.mapSize.z * 0.5; z++) {
               //let random = Math.floor(Math.random() * 100);
               if (
                 !this.seedRandom[this.structureSeed] ||
@@ -2409,11 +2442,11 @@
                 console.log("stone");
                 this.createFloor(x, z, this.textureCubeRock, "stone");
                 this.loadStructure(
-                  "rock/mossy_rocks_low_poly.glb",
+                  "rock_and_plants/scene.gltf",
                   x + 0.1,
                   -30,
-                  z,
-                  0.01
+                  z - 0.1,
+                  1.75
                 );
               } else if (random < this.randomP.wood) {
                 this.createFloor(x, z, this.textureCubeGrass, "wood");
@@ -2480,7 +2513,7 @@
         //}
 
         createFloor(x, z, texture, property) {
-          let position = { x: 20 * x, y: -30, z: 20 * z },
+          let position = { x: 20.001 * x, y: -30, z: 20.001 * z },
             scale = { x: 20, y: 3, z: 20 },
             quat = { x: 0, y: 0, z: 0, w: 1 },
             mass = 0;
@@ -2514,7 +2547,7 @@
 
           const geometry = new THREE.BoxGeometry(x * 0, 3, z * 0);
           const material = new THREE.MeshBasicMaterial({
-            transparent: true,
+            //transparent: true,
             opacity: 0,
             color: 0x000000,
           });
@@ -2551,6 +2584,8 @@
           // rigidBody.setRollingFriction(10);
 
           this.dynamicsWorld.addRigidBody(rigidBody);
+          blockPlane.matrixAutoUpdate = false;
+          blockPlane.updateMatrix();
         }
 
         CreatePlayer() {
@@ -3101,8 +3136,17 @@
         }
 
         movePlayer() {
+          if (!this.player) return;
           if (!this.player?.userData) return;
           if (!this.player.userData?.physicsBody) return;
+          //if (this.player?.position?.x)
+          //  this.playerCurrentPosition = this.player.position;
+          //if (!this.playerLastPosition)
+          //  this.playerLastPosition = this.player.position;
+          //if (this.playerLastPosition != this.playerCurrentPosition) {
+          //  console.log("ee");
+          //  //this.socket.emit("pos", this.player.position.toArray());
+          //}
           //console.log(this.player);
           this.moveDir = new THREE.Vector3();
           const forwardFactor =
@@ -3271,6 +3315,7 @@
           //   // this.camera.position.set(p.x(), p.y() + this.yOffset, p.z());
           //   // this.parent.SetPosition(this.camera.position);
           // }
+          this.playerLastPosition = this.player.position;
         }
 
         // action(action) {
@@ -3689,7 +3734,7 @@
               </div>
               <div class="modal-body">
                 <form>
-                  <div class="mb-3">
+                  <div class="form-group">
                     <label for="recipient-name" class="col-form-label"
                       >Party Name</label
                     >
@@ -3698,6 +3743,37 @@
                       class="form-control"
                       id="recipient-name"
                     />
+                  </div>
+                  <div class="form-group">
+                    <label for="recipient-seed" class="col-form-label"
+                      >Seed</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="recipient-seed"
+                      placeholder="69"
+                    />
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="recipient-size-x">Map size X:</label>
+                      <input
+                        placeholder="20"
+                        type="number"
+                        class="form-control"
+                        id="recipient-size-x"
+                      />
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="recipient-size-z">Map size Z:</label>
+                      <input
+                        placeholder="20"
+                        type="number"
+                        class="form-control"
+                        id="recipient-size-z"
+                      />
+                    </div>
                   </div>
                 </form>
               </div>
