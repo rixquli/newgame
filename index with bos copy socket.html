@@ -3582,7 +3582,7 @@
             }
             //console.log(this.player.position);
 
-            this.thirdPersonCameraUpdate(timeElapsedS);
+            this.thirdPersonCameraUpdate(timeElapsed);
             this.movePlayer();
             //this.moveVillagers();
             this.Villagers.update();
@@ -3596,7 +3596,7 @@
             // this.updateMovement();
             // this.updateJump();
 
-            if (this.dynamicsWorld) this.updatePhysics(timeElapsedS);
+            if (this.dynamicsWorld) this.updatePhysics(timeElapsed);
             this.renderer.render(this.scene, this.camera);
             this.previousFrame = t;
             this.update();
