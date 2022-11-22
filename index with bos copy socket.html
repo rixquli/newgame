@@ -365,6 +365,73 @@
       ////import Ammo from "/js/ammo.js";
 
       //import { annuaire } from "/annuaire.js";
+      class otherPlayer {
+        constructor() {
+          this.clock = new THREE.Clock();
+          this.mixer = [];
+          this.animationActions = [];
+          this.init();
+        }
+        init() {}
+
+        CreatePlayerAnimation(anim, player) {
+          let index = this.mixer.length || 0
+          this.mixer[index] = new THREE.AnimationMixer(player);
+          console.log(this.mixer[index].getRoot());
+          console.log(player);
+          console.log(player==this.mixer[index].getRoot());
+          // console.log(fbx);
+          if (anim[0]) {
+            const animationAction = this.mixer[
+            index
+            ].clipAction(anim[1]);
+            animationAction.play();
+            this.activeAction = animationAction;
+            this.animationActions[index]=[]
+            this.animationActions[index]["root"]=this.mixer[index].getRoot().id
+            this.animationActions[index]["Idle"] = this.mixer[
+            index
+            ].clipAction(anim[0]);
+            this.animationActions[index]["run"] = this.mixer[
+            index
+            ].clipAction(anim[1]);
+            console.log(this.animationActions);
+          }
+        }
+        update() {
+          let delta = this.clock.getDelta();
+          for (let i = 0; i < this.mixer.length; i++) {
+            if (this.mixer[i]) {
+              this.mixer[i].update(delta);
+            }
+          }
+        }
+        movePlayers() {
+          this.setAction(action);
+        }
+        setAction(action, id) {
+          // toAction.play();
+          if(action=="Run") action = "run"
+          //console.log(this.animationActions);
+          //console.log(this.animationActions.find((e)=>e.root==id));
+          let toAction = this.animationActions.find((e)=>e.root==id)[action];
+          //console.log(this.animationActions.find((e)=>e.root==id)[action]);
+          if (toAction != this.activeAction && toAction != undefined) {
+            //console.log(toAction);
+            this.lastAction = this.activeAction;
+            this.activeAction = toAction;
+            //lastAction.stop()
+            this.lastAction.fadeOut(0.5);
+            toAction.reset();
+            toAction.fadeIn(0.5);
+            toAction.play();
+            console.log("toAction.isRunning()")
+          }
+        }
+        deletePlayer(id) {
+          console.log(id);
+        }
+      }
       class Color {
         constructor(r, g, b) {
           this.set(r, g, b);
@@ -843,7 +910,7 @@
                   this.villagerActions[house + "." + i]["idle"] = this.mixer[
                     house + "." + i
                   ].clipAction(fbx.animations[2]);
-                  this.villagerActions[house + "." + i]["walk"] = this.mixer[
+                  this.villagerActions[house + "." + i]["run"] = this.mixer[
                     house + "." + i
                   ].clipAction(fbx.animations[0]);
                 }
@@ -1108,7 +1175,7 @@
               //  (((directionX + directionZ) / 2) * Math.PI) / 180;
             }
 
-            this.setAction(this.villagerActions[id]["walk"], id);
+            this.setAction(this.villagerActions[id]["run"], id);
           }
         }
 
@@ -1285,6 +1352,9 @@
 
           this.seed = 69;
           this.mapSize = { x: 20, z: 20 };
+
+          this.playerLastPosition = new THREE.Vector3();
+          this.playersAnim = new otherPlayer();
 
           this.playerRotation = -1;
           this.socket.on("partyList", (data) => {
@@ -1498,7 +1568,7 @@
         //      // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
         //      // console.log(this.player.rotation);
         //      this.loadAction("/character/mutant/Idle.fbx", "idle");
-        //      this.loadAction("/character/mutant/Walking.fbx", "walk");
+        //      this.loadAction("/character/mutant/Walking.fbx", "run");
         //      this.loadAction("/character/mutant/Jumping.fbx", "jump");
         //      this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
         //    },
@@ -1527,7 +1597,7 @@
         //  //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
         //  //     // this.assets["walkAnim"] = fbx;
         //  //     // this.zombieAnims = {};
-        //  //     // this.SetAnim("walk", this.assets["walkAnim"]);
+        //  //     // this.SetAnim("run", this.assets["walkAnim"]);
         //  //   },
         //  //   undefined,
         //  //   (error) => {
@@ -1548,7 +1618,7 @@
         //  //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
         //  //     // this.assets["walkAnim"] = fbx;
         //  //     // this.zombieAnims = {};
-        //  //     // this.SetAnim("walk", this.assets["walkAnim"]);
+        //  //     // this.SetAnim("run", this.assets["walkAnim"]);
         //  //   },
         //  //   undefined,
         //  //   (error) => {
@@ -1768,6 +1838,7 @@
             toAction.reset();
             toAction.fadeIn(1);
             toAction.play();
+            this.socket.emit("action", toAction._clip.name);
           }
         }
 
@@ -1805,7 +1876,7 @@
               // this.scene.getObjectByName("player").position.y -= 0.9;
               this._keys.moveLeft = 1;
               this.seeAtRight = false;
-              //this.setAction(this.animationActions["walk"]);
+              //this.setAction(this.animationActions["run"]);
               break;
             case 83:
             case 40:
@@ -1815,7 +1886,7 @@
             case 39:
               this._keys.moveRight = 1;
               this.seeAtRight = true;
-              //this.setAction(this.animationActions["walk"]);
+              //this.setAction(this.animationActions["run"]);
               break;
             case 32:
               // if (this.canJump)
@@ -1826,7 +1897,7 @@
             //   console.log(this.player.userData.physicsBody);
             //   break;
           }
-          this.socket.emit("pos", this.player.position.toArray());
+          //this.socket.emit("pos", this.player.position.toArray());
         }
 
         keyboardControlsUp(e) {
@@ -1860,7 +1931,7 @@
               this.jump = false;
               break;
           }
-          this.socket.emit("pos", this.player.position.toArray());
+          //this.socket.emit("pos", this.player.position.toArray());
         }
 
         keyboardControls() {
@@ -2275,13 +2346,13 @@
         //  if (this._keys.moveLeft == 1) {
         //    // console.log("left");
         //    this.rotationView = 1;
-        //    this.setAction(this.animationActions["walk"]);
+        //    this.setAction(this.animationActions["run"]);
         //    // this.player.position.x -= this.speed;
         //  }
         //  if (this._keys.moveRight == 1) {
         //    // console.log("right");
         //    this.rotationView = -1;
-        //    this.setAction(this.animationActions["walk"]);
+        //    this.setAction(this.animationActions["run"]);
         //    // this.player.position.x += this.speed;
         //  }
         //}
@@ -2594,7 +2665,7 @@
           //  console.log(e);
           //});
           this.socket.on("pos", (d) => {
-            const [id, pos] = d;
+            const [id, anim, pos] = d;
             if (!(id in this.players)) {
               console.log("new chalenger");
               console.log(id);
@@ -2625,100 +2696,55 @@
                 this.playerIsLoading = true;
                 this.CreatePlayerLoad(pos, id);
                 console.log("main palyer");
-                //const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
-                //const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+              } else {
+                console.log("other");
+                this.GLTFLoader.load(
+                  "/character/gentle_stickman/scene.gltf",
+                  (fbx) => {
+                    console.log(fbx);
+                    this.players[id] = fbx.scene;
+                    this.players[id].position.set(...pos);
+                    this.players[id].scale.set(7, 7, 7);
+
+                    this.scene.add(this.players[id]);
+                    this.playersAnim.CreatePlayerAnimation(
+                      fbx.animations,
+                      this.players[id]
+                    );
+                  },false,
+                  (error) => {
+                    console.error(error);
+                  }
+                );
+                //const geometry = new THREE.BoxGeometry(
+                //  scale.x,
+                //  scale.y,
+                //  scale.z
+                //);
+                //const material = new THREE.MeshBasicMaterial({
+                //  color: 0xffffff,
+                //});
                 //const cube = new THREE.Mesh(geometry, material);
                 //cube.position.set(...d);
                 //
                 //cube.name = "player";
                 ////this.player = cube;
                 //this.scene.add(cube);
-                //this.player = cube;
+                //console.log(id);
                 //this.players[id] = cube;
-                //let transform = new Ammo.btTransform();
-                //transform.setIdentity();
-                //transform.setOrigin(new Ammo.btVector3(pos));
-                //transform.setRotation(
-                //  new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
-                //);
-                //
-                //let motionState = new Ammo.btDefaultMotionState(transform);
-                //let localInertia = new Ammo.btVector3(0, 0, 0);
-                ////todo peut etre changer 0,5
-                //let shape = new Ammo.btBoxShape(
-                //  new Ammo.btVector3(scale.x, scale.y, scale.z)
-                //);
-                //
-                ////let shape = new Ammo.btCapsuleShape(radius, height);
-                //// shape.setMargin(0.05);
-                //// shape.calculateLocalInertia(mass, localInertia);
-                //
-                //let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
-                //  mass,
-                //  motionState,
-                //  shape,
-                //  localInertia
-                //);
-                //
-                //let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
-                //
-                //rigidBody.setFriction(0);
-                //
-                //rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
-                //
-                //this.dynamicsWorld.addRigidBody(rigidBody);
-                //this.player.userData.physicsBody = rigidBody;
-                //this.rigidBodies.push(this.player);
-                ////this.rigidBody(cube, quat, scale, pos, mass);
-                //this.playerBB = new THREE.Box3(
-                //  new THREE.Vector3(),
-                //  new THREE.Vector3()
-                //);
-                //this.playerBB.setFromObject(this.player);
-              } else {
-                console.log("other");
-                const geometry = new THREE.BoxGeometry(
-                  scale.x,
-                  scale.y,
-                  scale.z
-                );
-                const material = new THREE.MeshBasicMaterial({
-                  color: 0xffffff,
-                });
-                const cube = new THREE.Mesh(geometry, material);
-                cube.position.set(...d);
-
-                cube.name = "player";
-                //this.player = cube;
-                this.scene.add(cube);
-                console.log(id);
-                this.players[id] = cube;
               }
-
-              //this.GLTFLoader.load("/character (1).gltf", (object) => {
-              //  this.player = this.player = object;
-              //  // object.set(position.x, position.y, position.z);
-              //  // object.set(scale.x, scale.y, scale.z);
-              //  // object.set(quat.x, quat.y, quat.z, quat.w);
-              //  this.player.name = "player";
-              //  // setTimeout(() => {
-              //  //   console.log("1");
-              //  //   this.scene.add(object);
-              //  // }, 500);
-              //});
-
-              // this.GLTFloader.onLoadComplete = function () {
-              //   console.log("2");
-              //   this.scene.add(this.player);
-              // };
             }
             //if (this.player == this.players[id])
-            if (this.players[id]?.position)
+            if (this.players[id]?.position && this.players[id] != this.player){
+
               this.players[id].position.set(...pos);
+            this.playersAnim.setAction(anim, this.players[id].id);
+            }
           });
           this.socket.on("deletePlayer", (id) => {
             console.log(id);
             console.log(this.players[id]);
+            this.playersAnim.deletePlayer();
             this.scene.remove(this.players[id]);
           });
         }
@@ -2760,7 +2786,7 @@
           this.rigidBodies.push(object);
         }
 
-        CreatePlayerLoad(pos, id) {
+        CreatePlayerLoad(pos, id, mainPlayer) {
           //let position = { x: 0, y: 10, z: 0 },
           //  scale = { x: 10, y: 10, z: 10 },
           //  quat = { x: 0, y: 0, z: 0, w: 1 },
@@ -2842,16 +2868,16 @@
             (fbx) => {
               console.log(fbx);
               this.player = fbx.scene;
+              this.player.name = "player";
               //this.player.rotation.set(0, this.rotationView, 0);
               this.player.position.set(...pos);
               this.player.scale.set(7, 7, 7);
-              this.player.name = "player";
 
               //this.player = cube;
               //this.scene.add(cube);
               //this.player = cube;
               this.players[id] = fbx.scene;
-              this.mixer = new THREE.AnimationMixer(this.player);
+              this.mixer = new THREE.AnimationMixer(this.players[id]);
               // console.log(fbx);
 
               if (fbx.animations[0]) {
@@ -2863,7 +2889,7 @@
                 this.animationActions["idle"] = this.mixer.clipAction(
                   fbx.animations[0]
                 );
-                this.animationActions["walk"] = this.mixer.clipAction(
+                this.animationActions["run"] = this.mixer.clipAction(
                   fbx.animations[1]
                 );
               }
@@ -2873,7 +2899,7 @@
               // const action = this.mixer.clipAction(fbx.animations[0]);
               // action.play();
 
-              this.scene.add(this.player);
+              this.scene.add(fbx.scene);
 
               let transform = new Ammo.btTransform();
               transform.setIdentity();
@@ -2918,7 +2944,7 @@
               // console.log(this.player.rotation);
 
               //this.loadAction("/character/mutant/Idle.fbx", "idle");
-              //this.loadAction("/character/mutant/Walking.fbx", "walk");
+              //this.loadAction("/character/mutant/Walking.fbx", "run");
               //this.loadAction("/character/mutant/Jumping.fbx", "jump");
               //this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
             },
@@ -2955,7 +2981,7 @@
           //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
           //     // this.assets["walkAnim"] = fbx;
           //     // this.zombieAnims = {};
-          //     // this.SetAnim("walk", this.assets["walkAnim"]);
+          //     // this.SetAnim("run", this.assets["walkAnim"]);
           //   },
           //   undefined,
           //   (error) => {
@@ -2976,7 +3002,7 @@
           //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
           //     // this.assets["walkAnim"] = fbx;
           //     // this.zombieAnims = {};
-          //     // this.SetAnim("walk", this.assets["walkAnim"]);
+          //     // this.SetAnim("run", this.assets["walkAnim"]);
           //   },
           //   undefined,
           //   (error) => {
@@ -3140,14 +3166,19 @@
           if (!this.player?.userData) return;
           if (!this.player.userData?.physicsBody) return;
           //if (this.player?.position?.x)
-          //  this.playerCurrentPosition = this.player.position;
-          //if (!this.playerLastPosition)
-          //  this.playerLastPosition = this.player.position;
-          //if (this.playerLastPosition != this.playerCurrentPosition) {
-          //  console.log("ee");
-          //  //this.socket.emit("pos", this.player.position.toArray());
-          //}
-          //console.log(this.player);
+          //this.playerCurrentPosition = this.player.position
+          if (!this.playerLastPosition)
+            this.playerLastPosition.copy(this.player.position);
+          if (
+            this.playerLastPosition.x != this.player.position.x ||
+            this.playerLastPosition.y != this.player.position.y ||
+            this.playerLastPosition.z != this.player.position.z
+          ) {
+            //console.log("ee");
+            this.socket.emit("pos", this.player.position.toArray());
+          } else {
+            //console.log("ff");
+          }
           this.moveDir = new THREE.Vector3();
           const forwardFactor =
             this._keys.moveBackward - this._keys.moveForward ||
@@ -3180,7 +3211,7 @@
             //console.log("e");
             //this.player.rotation.y = Math.atan2(velocity.z(), velocity.x());
             //this.player.rotation.y += Math.PI / 2;
-            this.setAction(this.animationActions["walk"]);
+            this.setAction(this.animationActions["run"]);
           } else {
             this.setAction(this.animationActions["idle"]);
           }
@@ -3315,7 +3346,7 @@
           //   // this.camera.position.set(p.x(), p.y() + this.yOffset, p.z());
           //   // this.parent.SetPosition(this.camera.position);
           // }
-          this.playerLastPosition = this.player.position;
+          this.playerLastPosition.copy(this.player.position);
         }
 
         // action(action) {
@@ -3554,50 +3585,9 @@
             if (!this.previousFrame) {
               this.previousFrame = t;
             }
-            if (this.mixer && this.modelReady && this.player && this.loading) {
-              this.loading = false;
-              document.querySelector(".loadingScreen").style.visibility =
-                "hidden";
-              if (window.mobileAndTabletCheck()) {
-                document.querySelector(".joystick").style.visibility =
-                  "visible";
-                this.canvasSetUp();
-              }
-            }
-
-            //if (!this.modelReady) return;
-            // requestAnimationFrame(() => this.update());
-            this.delta = this.clock.getDelta();
-
-            let timeElapsed = t - this.previousFrame;
-            //let timeElapsed = this.clock.getElapsedTime();
-            const timeElapsedS = timeElapsed * 0.001;
-
-            if (this.mixer && this.modelReady && this.player) {
-              //this.animationActions[0].play()
-              //console.log(this.villagers["1.1"]);
-              //this.villagerActions[0].play();
-              this.mixer.update(this.delta);
-              //this.mixer.update(this.delta);
-            }
-            //console.log(this.player.position);
-
-            this.thirdPersonCameraUpdate(timeElapsed);
-            this.movePlayer();
-            //this.moveVillagers();
-            this.Villagers.update();
-            //console.log(this.player.boundingBox);
-
-            //if (this.playerBB)
-            //  this.playerBB
-            //  .applyMatrix4(this.player.matrixWorld);
-            //.copy(this.player.geometry.boundingBox)
-
-            // this.updateMovement();
-            // this.updateJump();
-
-            if (this.dynamicsWorld) this.updatePhysics(timeElapsed);
+            this.step(t);
             this.renderer.render(this.scene, this.camera);
+
             this.previousFrame = t;
             this.update();
             //if (this.mixer) {
@@ -3605,6 +3595,52 @@
             //  this.mixer.update(timeElapsedS);
             //}
           });
+        }
+
+        step(t) {
+          if (this.mixer && this.modelReady && this.player && this.loading) {
+            this.loading = false;
+            document.querySelector(".loadingScreen").style.visibility =
+              "hidden";
+            if (window.mobileAndTabletCheck()) {
+              document.querySelector(".joystick").style.visibility = "visible";
+              this.canvasSetUp();
+            }
+          }
+
+          //if (!this.modelReady) return;
+          // requestAnimationFrame(() => this.update());
+          this.delta = this.clock.getDelta();
+
+          let timeElapsed = t - this.previousFrame;
+          //let timeElapsed = this.clock.getElapsedTime();
+          const timeElapsedS = timeElapsed * 0.001;
+
+          if (this.mixer && this.modelReady && this.player) {
+            //this.animationActions[0].play()
+            //console.log(this.villagers["1.1"]);
+            //this.villagerActions[0].play();
+            this.mixer.update(this.delta);
+            //this.mixer.update(this.delta);
+          }
+          //console.log(this.player.position);
+
+          this.thirdPersonCameraUpdate(timeElapsed);
+          this.movePlayer();
+          this.playersAnim.update();
+          //this.moveVillagers();
+          this.Villagers.update();
+          //console.log(this.player.boundingBox);
+
+          //if (this.playerBB)
+          //  this.playerBB
+          //  .applyMatrix4(this.player.matrixWorld);
+          //.copy(this.player.geometry.boundingBox)
+
+          // this.updateMovement();
+          // this.updateJump();
+
+          if (this.dynamicsWorld) this.updatePhysics(timeElapsed);
         }
       }
 
