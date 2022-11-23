@@ -164,7 +164,7 @@
         top: 12vh;
         background-color: chocolate;
         border-radius: 10px;
-        height: 100%;
+        height: auto;
         max-width: 50vw;
       }
       #gridSelector > button {
@@ -172,14 +172,14 @@
       }
       div#collectMenu {
         display: none;
-        height: 85%;
-        overflow: scroll;
+        height: 50vh;
+        overflow-y: scroll;
       }
       #buildMenu {
         display: flex;
         flex-direction: column;
-        height: 85%;
-        overflow: scroll;
+        height: 50vh;
+        overflow-y: scroll;
       }
       #buildMenu > button {
         border: solid #000;
@@ -224,8 +224,14 @@
         visibility: hidden;
       }
       img.villagerColor {
-        width: 20%;
-        position: absolute;
+        width: 100%;
+      }
+
+      dd.villagerName {
+        display: flex;
+      }
+      dd.villagerName > label {
+        width: min-content;
       }
       .jobButton {
         font-size: 1.5em;
@@ -375,26 +381,25 @@
         init() {}
 
         CreatePlayerAnimation(anim, player) {
-          let index = this.mixer.length || 0
+          let index = this.mixer.length || 0;
           this.mixer[index] = new THREE.AnimationMixer(player);
           console.log(this.mixer[index].getRoot());
           console.log(player);
-          console.log(player==this.mixer[index].getRoot());
+          console.log(player == this.mixer[index].getRoot());
           // console.log(fbx);
           if (anim[0]) {
-            const animationAction = this.mixer[
-            index
-            ].clipAction(anim[1]);
+            const animationAction = this.mixer[index].clipAction(anim[1]);
             animationAction.play();
             this.activeAction = animationAction;
-            this.animationActions[index]=[]
-            this.animationActions[index]["root"]=this.mixer[index].getRoot().id
-            this.animationActions[index]["Idle"] = this.mixer[
-            index
-            ].clipAction(anim[0]);
-            this.animationActions[index]["run"] = this.mixer[
-            index
-            ].clipAction(anim[1]);
+            this.animationActions[index] = [];
+            this.animationActions[index]["root"] =
+              this.mixer[index].getRoot().id;
+            this.animationActions[index]["Idle"] = this.mixer[index].clipAction(
+              anim[0]
+            );
+            this.animationActions[index]["run"] = this.mixer[index].clipAction(
+              anim[1]
+            );
             console.log(this.animationActions);
           }
         }
@@ -411,10 +416,12 @@
         }
         setAction(action, id) {
           // toAction.play();
-          if(action=="Run") action = "run"
+          if (action == "Run") action = "run";
           //console.log(this.animationActions);
           //console.log(this.animationActions.find((e)=>e.root==id));
-          let toAction = this.animationActions.find((e)=>e.root==id)[action];
+          let toAction = this.animationActions.find((e) => e.root == id)[
+            action
+          ];
           //console.log(this.animationActions.find((e)=>e.root==id)[action]);
           if (toAction != this.activeAction && toAction != undefined) {
             //console.log(toAction);
@@ -425,22 +432,30 @@
             toAction.reset();
             toAction.fadeIn(0.5);
             toAction.play();
-            console.log("toAction.isRunning()")
           }
         }
         deletePlayer(id) {
           console.log(id);
         }
       }
+
       class Color {
         constructor(r, g, b) {
           this.set(r, g, b);
         }
 
-        toString() {
+        toRgb() {
           return `rgb(${Math.round(this.r)}, ${Math.round(
             this.g
           )}, ${Math.round(this.b)})`;
+        }
+
+        toHex() {
+          return rgbToHex(
+            Math.round(this.r),
+            Math.round(this.g),
+            Math.round(this.b)
+          );
         }
 
         set(r, g, b) {
@@ -605,6 +620,7 @@
             values: result.values,
             loss: result.loss,
             filter: this.css(result.values),
+            filterRaw: this.raw(result.values),
           };
         }
 
@@ -711,15 +727,28 @@
           );
         }
 
+        raw(filters) {
+          function fmt(idx, multiplier = 1) {
+            return Math.round(filters[idx] * multiplier);
+          }
+          return `brightness(0) saturate(100%) invert(${fmt(0)}%) sepia(${fmt(
+            1
+          )}%) saturate(${fmt(2)}%) hue-rotate(${fmt(
+            3,
+            3.6
+          )}deg) brightness(${fmt(4)}%) contrast(${fmt(5)}%)`;
+        }
+
         css(filters) {
           function fmt(idx, multiplier = 1) {
             return Math.round(filters[idx] * multiplier);
           }
-          return `filter: invert(${fmt(0)}%) sepia(${fmt(1)}%) saturate(${fmt(
-            2
-          )}%) hue-rotate(${fmt(3, 3.6)}deg) brightness(${fmt(
-            4
-          )}%) contrast(${fmt(5)}%);`;
+          return `filter: brightness(0) saturate(100%) invert(${fmt(
+            0
+          )}%) sepia(${fmt(1)}%) saturate(${fmt(2)}%) hue-rotate(${fmt(
+            3,
+            3.6
+          )}deg) brightness(${fmt(4)}%) contrast(${fmt(5)}%);`;
         }
       }
 
@@ -868,6 +897,7 @@
           this.villagerSpeed = 0.2;
           this.activeAction = [];
           this.lastAction = [];
+          this.villagerImgFilter = []
           //this.id = id
           //this.villager = this.villagers[id]
           //this.createVillager(position, house);
@@ -891,7 +921,7 @@
                 this.villagers[house + "." + i].returnHouse = false;
 
                 let new_mtl = new THREE.MeshBasicMaterial({
-                  color: 0x000000,
+                  color: 0xffffff,
                 });
 
                 this.villagers[house + "." + i].traverse((o) => {
@@ -944,7 +974,7 @@
               <dt class="houseNumber">House n°${i}</dt>
               <dd class="villagerName">
                 <label>
-                  <img class="villagerColor" src="/img/pngegg.png">
+                  <img style="${this.villagerImgFilter[i+".1"]||""}" class="villagerColor" src="/img/pngegg.png">
                 <input villagerid="${
                   i + ".1"
                 }" class="color" type="color" name="colorPicker">
@@ -958,7 +988,7 @@
             </dd>
             <dd class="villagerName">
               <label>
-                    <img class="villagerColor" src="/img/pngegg.png">
+                    <img style="${this.villagerImgFilter[i+".2"]||""}" class="villagerColor" src="/img/pngegg.png">
                   <input villagerid="${
                     i + ".2"
                   }" class="color" type="color" name="colorPicker">
@@ -973,7 +1003,7 @@
             </dd>
             <dd class="villagerName">
               <label>
-                  <img class="villagerColor" src="/img/pngegg.png">
+                  <img style="${this.villagerImgFilter[i+".3"]||""}" class="villagerColor" src="/img/pngegg.png">
                 <input villagerid="${
                   i + ".3"
                 }" class="color" type="color" name="colorPicker">
@@ -1021,6 +1051,7 @@
           const solver = new Solver(color);
           const result = solver.solve();
           e.path[1].children[0].style = result.filter;
+          this.villagerImgFilter[e.path[1].children[1].getAttribute("villagerid")] = result.filter
           console.log(result);
           let new_mtl = new THREE.MeshBasicMaterial({
             color: new THREE.Color(
@@ -1645,8 +1676,15 @@
               //this.yAtOrigin = Annuaire.yAtOrigin;
               //let path = Annuaire.path;
               //this.load(path);
+              this.size = [];
               let modalBodyInput =
-                exampleModal.querySelector(".modal-body input");
+                exampleModal.querySelector("#recipient-name");
+              this.seed =
+                exampleModal.querySelector("#recipient-seed").value || 69;
+              this.size.x =
+                exampleModal.querySelector("#recipient-size-x").value || 20;
+              this.size.z =
+                exampleModal.querySelector("#recipient-size-z").value || 20;
               console.log(modalBodyInput.value);
               this.loading = true;
               document.querySelector(".loadingScreen").style.visibility =
@@ -2389,15 +2427,14 @@
           this.GLTFLoader.load(
             "structure/" + structure,
             (gltf) => {
-              let structure = gltf.scene;
-              structure.position.set(x * 20, y, z * 20);
-              structure.scale.set(scale, scale, scale);
-              if (rotation) structure.rotation.y = rotation;
-              if (house) structure.name = `house${this.houseN}`;
+              gltf.scene.position.set(x * 20, y, z * 20);
+              gltf.scene.scale.set(scale, scale, scale);
+              if (rotation) gltf.scene.rotation.y = rotation;
+              if (house) gltf.scene.name = `house${this.houseN}`;
               if (prop) this.scene.getObjectById(block).prop = prop;
-              structure.matrixAutoUpdate = false;
-              structure.updateMatrix();
-              this.scene.add(structure);
+              gltf.scene.matrixAutoUpdate = false;
+              gltf.scene.updateMatrix();
+              this.scene.add(gltf.scene);
             },
             undefined,
             (error) => {
@@ -2472,7 +2509,7 @@
         }
 
         createMap() {
-          this.CreateSolidFloor(20, 20);
+          this.CreateSolidFloor(this.size.x, this.size.z);
 
           this.total = 0;
           this.totalAdd = 0;
@@ -2491,8 +2528,8 @@
           this.textureCubeFarm = this.loader.load(
             "https://static.wikia.nocookie.net/minecraft_gamepedia/images/3/37/Dirt_Path_%28top_texture%29_JE2_BE2.png"
           );
-          for (let x = this.mapSize.x * -0.5; x < this.mapSize.x * 0.5; x++) {
-            for (let z = this.mapSize.z * -0.5; z < this.mapSize.z * 0.5; z++) {
+          for (let x = this.size.x * -0.5; x < this.size.x * 0.5; x++) {
+            for (let z = this.size.z * -0.5; z < this.size.z * 0.5; z++) {
               //let random = Math.floor(Math.random() * 100);
               if (
                 !this.seedRandom[this.structureSeed] ||
@@ -2504,20 +2541,21 @@
               //console.log(random);
               this.average(random);
 
-              if (random < this.randomP.houseVillager) {
-                this.createFloor(x, z, this.textureCubeGrass, "houseVillager");
-
-                this.loadStructure("house_minecraft/scene.gltf", x, -28, z, 20);
-                //this.createVillager(Ammo = AmmoClone, x,z)
-              } else if (random < this.randomP.stone) {
+              //if (random < this.randomP.houseVillager) {
+              //  this.createFloor(x, z, this.textureCubeGrass, "houseVillager");
+              //
+              //  this.loadStructure("house_minecraft/scene.gltf", x, -28, z, 20);
+              //  //this.createVillager(Ammo = AmmoClone, x,z)
+              //} else
+              if (random < this.randomP.stone) {
                 console.log("stone");
                 this.createFloor(x, z, this.textureCubeRock, "stone");
                 this.loadStructure(
-                  "rock_and_plants/scene.gltf",
+                  "low-poly_rock/scene.gltf",
                   x + 0.1,
-                  -30,
+                  -25,
                   z - 0.1,
-                  1.75
+                  0.13
                 );
               } else if (random < this.randomP.wood) {
                 this.createFloor(x, z, this.textureCubeGrass, "wood");
@@ -2584,7 +2622,7 @@
         //}
 
         createFloor(x, z, texture, property) {
-          let position = { x: 20.001 * x, y: -30, z: 20.001 * z },
+          let position = { x: 20 * x, y: -30, z: 20 * z },
             scale = { x: 20, y: 3, z: 20 },
             quat = { x: 0, y: 0, z: 0, w: 1 },
             mass = 0;
@@ -2665,7 +2703,7 @@
           //  console.log(e);
           //});
           this.socket.on("pos", (d) => {
-            const [id, anim, pos] = d;
+            const [id, anim, rot, pos] = d;
             if (!(id in this.players)) {
               console.log("new chalenger");
               console.log(id);
@@ -2711,7 +2749,8 @@
                       fbx.animations,
                       this.players[id]
                     );
-                  },false,
+                  },
+                  false,
                   (error) => {
                     console.error(error);
                   }
@@ -2735,10 +2774,10 @@
               }
             }
             //if (this.player == this.players[id])
-            if (this.players[id]?.position && this.players[id] != this.player){
-
+            if (this.players[id]?.position && this.players[id] != this.player) {
               this.players[id].position.set(...pos);
-            this.playersAnim.setAction(anim, this.players[id].id);
+              this.players[id].rotation.set(rot._x, rot._y, rot._z);
+              this.playersAnim.setAction(anim, this.players[id].id);
             }
           });
           this.socket.on("deletePlayer", (id) => {
@@ -3175,7 +3214,10 @@
             this.playerLastPosition.z != this.player.position.z
           ) {
             //console.log("ee");
-            this.socket.emit("pos", this.player.position.toArray());
+            this.socket.emit("pos", {
+              rotation: this.player.rotation,
+              pos: this.player.position.toArray(),
+            });
           } else {
             //console.log("ff");
           }
@@ -3446,19 +3488,19 @@
         //  //}
         //  this.animFrameId = window.requestAnimationFrame(this.update);
         //};
-
+          
         canvasSetUp() {
           this.canvas = document.getElementById("joystick");
           this.ctx = this.canvas.getContext("2d");
           this.canvasResize();
 
-          document.addEventListener("mousedown", (e) => this.startDrawing(e));
-          document.addEventListener("mouseup", () => this.stopDrawing());
+          joystick.addEventListener("mousedown", (e) => this.startDrawing(e));
+          joystick.addEventListener("mouseup", () => this.stopDrawing());
           document.addEventListener("mousemove", (e) => this.Draw(e));
 
-          document.addEventListener("touchstart", (e) => this.startDrawing(e));
-          document.addEventListener("touchend", () => this.stopDrawing());
-          document.addEventListener("touchcancel", () => this.stopDrawing());
+          joystick.addEventListener("touchstart", (e) => this.startDrawing(e));
+          joystick.addEventListener("touchend", () => this.stopDrawing());
+          joystick.addEventListener("touchcancel", () => this.stopDrawing());
           document.addEventListener("touchmove", (e) => this.Draw(e));
           window.addEventListener("resize", () => this.canvasResize());
 
@@ -3543,8 +3585,10 @@
           this.rotationCanvasEnable = false;
         }
         startDrawing(event) {
+          event.preventDefault()
           this.paint = true;
           this.getPosition(event);
+          console.log(this.is_it_in_the_circle());
           if (this.is_it_in_the_circle()) {
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.background();
@@ -3684,20 +3728,20 @@
         <button id="buildMine">
           <img src="/img/mine.png" width="80px" />
           <p class="buildable">
-            50<img src="/img/andesite.png" width="30px" /> Build Mine
+            50<img src="/img/Andesite.png" width="30px" /> Build Mine
           </p>
         </button>
         <button id="buildBlacksmithHouse">
           <img src="/img/blacksmith_house.png" width="80px" />
           <p class="buildable">
-            50<img src="/img/andesite.png" width="30px" /> Build Blacksmith
+            50<img src="/img/Andesite.png" width="30px" /> Build Blacksmith
             House
           </p>
         </button>
         <button id="buildShop">
           <img src="/img/shop-icon.png" width="80px" />
           <p class="buildable">
-            50<img src="/img/andesite.png" width="30px" /> Build Shop
+            50<img src="/img/Andesite.png" width="30px" /> Build Shop
           </p>
         </button>
       </div>

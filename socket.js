@@ -29,12 +29,12 @@ class ConnectedUser {
     this.structure = [];
 
     this.socket.on("pos", (d) => {
-      this.pos = [...d];
+     this.rotation = d.rotation
+      this.pos = [...d.pos]
       this.spamEveryone();
     });
     this.socket.on("action",(e)=>{
       this.anim = e
-      console.log(this.anim);
     })
     this.socket.on("structure", (e) => {
       if (!STRUCTURE[this.room]) {
@@ -47,7 +47,7 @@ class ConnectedUser {
     this.buildAllStructure();
   }
   spamEveryone() {
-    this.socket.emit("pos", [this.id, this.anim,this.pos]);
+    this.socket.emit("pos", [this.id, this.anim,this.rotation,this.pos]);
 
     USERS.forEach((e) => {
       if (!io.sockets.adapter.sids[e.socket.id]) return;
@@ -55,8 +55,8 @@ class ConnectedUser {
         Object.keys(io.sockets.adapter.sids[e.socket.id])[1] ==
         Object.keys(io.sockets.adapter.sids[this.socket.id])[1]
       ) {
-        e.socket.emit("pos", [this.id,this.anim, this.pos]);
-        this.socket.emit("pos", [e.id,e.anim, e.pos]);
+        e.socket.emit("pos", [this.id,this.anim, this.rotation,this.pos]);
+        this.socket.emit("pos", [e.id,e.anim,e.rotation, e.pos]);
       }
     });
   }
