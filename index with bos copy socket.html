@@ -294,6 +294,29 @@
         margin-right: -5px;
         margin-left: -5px;
       }
+      .modalShop {
+        color: black;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .produit {
+        margin-top: 0;
+        margin-right: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 40%;
+      }
+      .produit img {
+        width: 100%;
+      }
+      .produit img:hover {
+        opacity: 0.8;
+      }
+      div#nav-home {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
     </style>
     <style>
       body {
@@ -371,6 +394,30 @@
       ////import Ammo from "/js/ammo.js";
 
       //import { annuaire } from "/annuaire.js";
+      class shop {
+        constructor() {
+          this.obj = [];
+        }
+        createShop(obj) {
+          this.obj.push(obj);
+        }
+        updateShop(player) {
+          for (let i = 0; i < this.obj.length; i++) {
+            if (
+              Math.round(
+                player.position
+                  .clone()
+                  .distanceTo(this.obj[i].position.clone()) * 10
+              ) /
+                10 <
+              5
+            ) {
+              console.log("zesdxcfvgbhj");
+              player.position.set(0, 50, 0);
+            }
+          }
+        }
+      }
       class otherPlayer {
         constructor() {
           this.clock = new THREE.Clock();
@@ -897,7 +944,7 @@
           this.villagerSpeed = 0.2;
           this.activeAction = [];
           this.lastAction = [];
-          this.villagerImgFilter = []
+          this.villagerImgFilter = [];
           //this.id = id
           //this.villager = this.villagers[id]
           //this.createVillager(position, house);
@@ -974,7 +1021,9 @@
               <dt class="houseNumber">House n°${i}</dt>
               <dd class="villagerName">
                 <label>
-                  <img style="${this.villagerImgFilter[i+".1"]||""}" class="villagerColor" src="/img/pngegg.png">
+                  <img style="${
+                    this.villagerImgFilter[i + ".1"] || ""
+                  }" class="villagerColor" src="/img/pngegg.png">
                 <input villagerid="${
                   i + ".1"
                 }" class="color" type="color" name="colorPicker">
@@ -988,7 +1037,9 @@
             </dd>
             <dd class="villagerName">
               <label>
-                    <img style="${this.villagerImgFilter[i+".2"]||""}" class="villagerColor" src="/img/pngegg.png">
+                    <img style="${
+                      this.villagerImgFilter[i + ".2"] || ""
+                    }" class="villagerColor" src="/img/pngegg.png">
                   <input villagerid="${
                     i + ".2"
                   }" class="color" type="color" name="colorPicker">
@@ -1003,7 +1054,9 @@
             </dd>
             <dd class="villagerName">
               <label>
-                  <img style="${this.villagerImgFilter[i+".3"]||""}" class="villagerColor" src="/img/pngegg.png">
+                  <img style="${
+                    this.villagerImgFilter[i + ".3"] || ""
+                  }" class="villagerColor" src="/img/pngegg.png">
                 <input villagerid="${
                   i + ".3"
                 }" class="color" type="color" name="colorPicker">
@@ -1051,7 +1104,9 @@
           const solver = new Solver(color);
           const result = solver.solve();
           e.path[1].children[0].style = result.filter;
-          this.villagerImgFilter[e.path[1].children[1].getAttribute("villagerid")] = result.filter
+          this.villagerImgFilter[
+            e.path[1].children[1].getAttribute("villagerid")
+          ] = result.filter;
           console.log(result);
           let new_mtl = new THREE.MeshBasicMaterial({
             color: new THREE.Color(
@@ -1386,6 +1441,9 @@
 
           this.playerLastPosition = new THREE.Vector3();
           this.playersAnim = new otherPlayer();
+          this.shop = [];
+          this.setPos = [];
+          this.idealOffset = [0, 30, 40];
 
           this.playerRotation = -1;
           this.socket.on("partyList", (data) => {
@@ -2307,6 +2365,13 @@
             this.canCollect = true;
             li.innerHTML = li.innerHTML + `<p>Press E to collect</p>`;
           }
+          //else if (prop == "shop") {
+          //  li.innerHTML =
+          //    li.innerHTML + `<button id="buildHouse">Build house</button>`;
+          //  document
+          //    .querySelector("#buildHouse")
+          //    .addEventListener("click", (e) => this.buildHouse(e), false);
+          //}
           //if (color.g != 1) {
           //  li.innerHTML = li.innerHTML + `<br><button>Harvest</button>`
           //}
@@ -2418,9 +2483,83 @@
 
           //this.setupGraphicsWolrd(Ammo);
           this.createMap();
+          this.createUpDown();
           this.CreatePlayer();
           //this.CreatePlayerLoad();
           //this.loadStructure();
+        }
+
+        createUpDown() {
+          this.GLTFLoader.load(
+            "structure/small_store/scene.gltf",
+            (gltf) => {
+              let quat = { x: 0, y: 0, z: 0, w: 1 },
+                pos = [0, -250, 0],
+                size = [200, 3, 200],
+                mass = 0;
+
+              let structure = gltf.scene;
+              structure.position.set(...pos);
+              structure.scale.set(2.5, 2.5, 2.5);
+              //if (rotation) gltf.scene.rotation.y = rotation;
+              structure.name = "Shop";
+              //structure.matrixAutoUpdate = false;
+              //structure.updateMatrix();
+              this.scene.add(structure);
+
+              //   let geometry = new THREE.InstancedBufferGeometry()
+              //   structure.traverse( function ( child ) {
+              //		if ( child.isMesh ) {
+              //			geometry.copy(child.geometry)
+
+              //		}
+              //	} );
+
+              const geometry = new THREE.BoxGeometry(...size);
+              const material = new THREE.MeshBasicMaterial({
+                //transparent: true,
+                //opacity: 0,
+                color: 0x000000,
+              });
+
+              let blockPlane = new THREE.Mesh(geometry, material);
+              blockPlane.position.set(...pos);
+              this.scene.add(blockPlane);
+
+              let transform = new Ammo.btTransform();
+              transform.setIdentity();
+              transform.setOrigin(new Ammo.btVector3(...pos));
+              transform.setRotation(
+                new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
+              );
+
+              let motionState = new Ammo.btDefaultMotionState(transform);
+              let localInertia = new Ammo.btVector3(0, 0, 0);
+              let shape = new Ammo.btBoxShape(
+                new Ammo.btVector3(size[0] * 0.5, size[1] * 0.5, size[2] * 0.5)
+              );
+              shape.setMargin(0.05);
+              shape.calculateLocalInertia(mass, localInertia);
+
+              let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
+                mass,
+                motionState,
+                shape,
+                localInertia
+              );
+
+              let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+
+              // rigidBody.setFriction(4);
+              // rigidBody.setRollingFriction(10);
+
+              this.dynamicsWorld.addRigidBody(rigidBody);
+            },
+            undefined,
+            (error) => {
+              console.error(error);
+            }
+          );
         }
 
         loadStructure(structure, x, y, z, scale, house, rotation, prop, block) {
@@ -2432,8 +2571,10 @@
               if (rotation) gltf.scene.rotation.y = rotation;
               if (house) gltf.scene.name = `house${this.houseN}`;
               if (prop) this.scene.getObjectById(block).prop = prop;
+              if (prop == "shop") this.shop.push(gltf.scene);
               gltf.scene.matrixAutoUpdate = false;
               gltf.scene.updateMatrix();
+
               this.scene.add(gltf.scene);
             },
             undefined,
@@ -2732,6 +2873,7 @@
 
               if (!this.playerIsLoading) {
                 this.playerIsLoading = true;
+                this.playerId = id;
                 this.CreatePlayerLoad(pos, id);
                 console.log("main palyer");
               } else {
@@ -2910,7 +3052,7 @@
               this.player.name = "player";
               //this.player.rotation.set(0, this.rotationView, 0);
               this.player.position.set(...pos);
-              this.player.scale.set(7, 7, 7);
+              this.player.scale.set(4, 4, 4);
 
               //this.player = cube;
               //this.scene.add(cube);
@@ -2966,14 +3108,18 @@
               );
 
               let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
+              this.playerRigidBody = rigidBody;
 
               rigidBody.setFriction(0);
 
               rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
+              rigidBody.setCollisionFlags(16);
 
               this.dynamicsWorld.addRigidBody(rigidBody);
               this.player.userData.physicsBody = rigidBody;
-              this.rigidBodies.push(this.player);
+              if (!this.playerRigidBodyI) this.rigidBodies.push(this.player);
+              else this.rigidBodies[this.playerRigidBodyI] = this.player;
+              this.playerRigidBodyI = this.rigidBodies.length - 1;
               //this.playerBB = new THREE.Box3(
               //  new THREE.Vector3(),
               //  new THREE.Vector3()
@@ -3160,43 +3306,31 @@
           this.dynamicsWorld.stepSimulation(timeElapsed, 10);
 
           for (let i = 0; i < this.rigidBodies.length; i++) {
-            let threeObject = this.rigidBodies[i];
-            // console.log(i);
-            // console.log(threeObject);
-            let ammoObject = threeObject.userData.physicsBody;
-            let ms = ammoObject.getMotionState();
+            if (
+              this.rigidBodies[i] &&
+              this.rigidBodies[i].userData?.physicsBody
+            ) {
+              let threeObject = this.rigidBodies[i];
+              // console.log(i);
+              // console.log(threeObject);
+              let ammoObject = threeObject.userData.physicsBody;
+              let ms = ammoObject.getMotionState();
 
-            if (ms) {
-              ms.getWorldTransform(this.TempTransform);
-              let pos = this.TempTransform.getOrigin();
-              let quat = this.TempTransform.getRotation();
-              threeObject.position.set(pos.x(), pos.y(), pos.z());
-              //threeObject.quaternion.set(quat.x(), this.playerRotation, quat.z(), quat.w());
-              threeObject.quaternion.x = quat.x();
-              threeObject.quaternion.z = quat.z();
-              //threeObject.quaternion.w = quat.w();
-              //console.log(quat.y());
-              //if (this.seeAtRight) {
-              //  threeObject.quaternion.set(
-              //    quat.x(),
-              //    quat.y() * -1,
-              //    quat.z(),
-              //    quat.w()
-              //  );
-              //} else {
-              //  threeObject.quaternion.set(
-              //    quat.x(),
-              //    quat.y(),
-              //    quat.z(),
-              //    quat.w()
-              //  );
-              //}
+              if (ms) {
+                ms.getWorldTransform(this.TempTransform);
+                let pos = this.TempTransform.getOrigin();
+                let quat = this.TempTransform.getRotation();
+
+                threeObject.position.set(pos.x(), pos.y(), pos.z());
+                threeObject.quaternion.x = quat.x();
+                threeObject.quaternion.z = quat.z();
+              }
+              //let angVel = this.player.userData.physicsBody.getAngularVelocity();
+              //this.player.userData.physicsBody.setAngularVelocity(
+              //  new Ammo.btVector3(angVel.x, angVel.y, angVel.z)
+              //);
+              this.QueryJump();
             }
-            //let angVel = this.player.userData.physicsBody.getAngularVelocity();
-            //this.player.userData.physicsBody.setAngularVelocity(
-            //  new Ammo.btVector3(angVel.x, angVel.y, angVel.z)
-            //);
-            this.QueryJump();
           }
         }
 
@@ -3213,14 +3347,16 @@
             this.playerLastPosition.y != this.player.position.y ||
             this.playerLastPosition.z != this.player.position.z
           ) {
-            //console.log("ee");
             this.socket.emit("pos", {
               rotation: this.player.rotation,
               pos: this.player.position.toArray(),
             });
+
+            this.updateShop();
           } else {
             //console.log("ff");
           }
+
           this.moveDir = new THREE.Vector3();
           const forwardFactor =
             this._keys.moveBackward - this._keys.moveForward ||
@@ -3265,7 +3401,7 @@
 
           //this.Deccelerate(t);
           //this.Accelarate(direction, t);
-
+          //const velocity = this.player.userData.physicsBody.getLinearVelocity();
           const moveVector = this.tempVec.copy(
             new THREE.Vector3(rightFactor, 0, forwardFactor)
           );
@@ -3427,7 +3563,7 @@
           if (!this.player) return;
           const playerPosition = this.player.position;
 
-          const idealOffset = new THREE.Vector3(0, 30, 40);
+          const idealOffset = new THREE.Vector3(...this.idealOffset);
           idealOffset.add(this.player.position);
           const idealLookat = new THREE.Vector3(0, 0, 0);
           idealLookat.add(this.player.position);
@@ -3488,7 +3624,7 @@
         //  //}
         //  this.animFrameId = window.requestAnimationFrame(this.update);
         //};
-          
+
         canvasSetUp() {
           this.canvas = document.getElementById("joystick");
           this.ctx = this.canvas.getContext("2d");
@@ -3585,7 +3721,7 @@
           this.rotationCanvasEnable = false;
         }
         startDrawing(event) {
-          event.preventDefault()
+          event.preventDefault();
           this.paint = true;
           this.getPosition(event);
           console.log(this.is_it_in_the_circle());
@@ -3623,6 +3759,46 @@
           this.joystick(this.width / 2, this.height / 2);
         }
 
+        updateShop() {
+          console.log(this.player.position);
+          for (let i = 0; i < this.shop.length; i++) {
+            if (
+              Math.round(
+                this.player.position
+                  .clone()
+                  .distanceTo(this.shop[i].position.clone()) * 10
+              ) /
+                10 <
+              5
+            ) {
+              this.tpPlayer([0, -250, 0], [0, 20, 30]);
+            }
+          }
+          if (
+            Math.round(
+              this.player.position
+                .clone()
+                .distanceTo(new THREE.Vector3(0, -245, 60)) * 10
+            ) /
+              10 <
+            5
+          ) {
+            this.tpPlayer(this.playerPositionBefore, [0, 20, 30]);
+          }
+        }
+
+        tpPlayer(pos, camera) {
+          this.scene.remove(this.scene.getObjectByName("player"));
+          this.dynamicsWorld.removeRigidBody(this.playerRigidBody);
+          if (this.rigidBodies[this.playerRigidBodyI])
+            delete this.rigidBodies[this.playerRigidBodyI];
+          this.CreatePlayerLoad(pos, this.playerId);
+          this.idealOffset = camera;
+          this.playerPositionBefore = this.player.position.toArray();
+          this.playerPositionBefore[2] = this.player.position.z + 10;
+          console.log(this.playerPositionBefore);
+        }
+
         update() {
           //const currentFrame = this.scene.time.now
           window.requestAnimationFrame((t) => {
@@ -3644,6 +3820,7 @@
         step(t) {
           if (this.mixer && this.modelReady && this.player && this.loading) {
             this.loading = false;
+            //const myModalAlternative = new bootstrap.Modal('#lootbox').toggle()
             document.querySelector(".loadingScreen").style.visibility =
               "hidden";
             if (window.mobileAndTabletCheck()) {
@@ -3705,6 +3882,7 @@
           return check;
         };
         console.log(window.mobileAndTabletCheck());
+        const myModalAlternative = new bootstrap.Modal("#lootbox").toggle();
         Ammo().then((lib) => {
           Ammo = lib;
           let app = new App();
@@ -3887,6 +4065,124 @@
       />
       <p>Loading...</p>
     </div>
+    <div class="modalShop">
+      <div
+        class="modal fade"
+        id="lootbox"
+        aria-hidden="true"
+        aria-labelledby="lootboxLabel"
+        tabindex="-1"
+      >
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <nav>
+                <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                  <button
+                    class="nav-link active"
+                    id="nav-home-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-home"
+                    type="button"
+                    role="tab"
+                    aria-controls="nav-home"
+                    aria-selected="true"
+                  >
+                    Lootbox
+                  </button>
+                  <button
+                    class="nav-link"
+                    id="nav-profile-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-profile"
+                    type="button"
+                    role="tab"
+                    aria-controls="nav-profile"
+                    aria-selected="false"
+                  >
+                    Shop
+                  </button>
+                  <button
+                    class="nav-link"
+                    id="nav-contact-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#nav-contact"
+                    type="button"
+                    role="tab"
+                    aria-controls="nav-contact"
+                    aria-selected="false"
+                  >
+                    Autre
+                  </button>
+                </div>
+              </nav>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="tab-content" id="nav-tabContent">
+                <div
+                  class="tab-pane fade show active"
+                  id="nav-home"
+                  role="tabpanel"
+                  aria-labelledby="nav-home-tab"
+                >
+                  <button class="produit">
+                    <img src="/img/lootbox-lv1.png" alt="" />
+                    50€
+                  </button>
+
+                  <button class="produit">
+                    <img src="/img/lootbox-lv2.png" alt="" />
+                    50€
+                  </button>
+
+                  <button class="produit">
+                    <img src="/img/lootbox-lv3.png" alt="" />
+                    50€
+                  </button>
+
+                  <button class="produit">
+                    <img src="/img/lootbox-lv4.png" alt="" />
+                    50€
+                  </button>
+
+                  <button class="produit">
+                    <img src="/img/lootbox-lv5.png" alt="" />
+                    50€
+                  </button>
+                </div>
+                <div
+                  class="tab-pane fade"
+                  id="nav-profile"
+                  role="tabpanel"
+                  aria-labelledby="nav-profile-tab"
+                >
+                <button class="produit">
+                  <img src="/img/wood.png" alt="" />
+                  50€
+                </button>
+                </div>
+                <div
+                  class="tab-pane fade"
+                  id="nav-contact"
+                  role="tabpanel"
+                  aria-labelledby="nav-contact-tab"
+                >
+                  ...
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="joystick">
       <canvas id="joystick" name="game"></canvas>
     </div>
