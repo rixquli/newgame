@@ -317,6 +317,46 @@
         flex-wrap: wrap;
         justify-content: space-around;
       }
+      .inventory {
+        color: #000;
+      }
+      .modal-body.inventoryContent {
+        background-color: bisque;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+      }
+      .inventoryItem {
+        margin-top: 0;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        background-image: url("/img/PngItem_4889400.png");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+      }
+      .inventoryItem img {
+        height: 25vmin;
+      }
+      .inventoryItem img:hover {
+        opacity: 0.8;
+      }
+      .itemCount {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        width: 7.6em;
+      }
+      .echap {
+        visibility: hidden;
+        color: #ffffff;
+        position: fixed;
+        bottom: 0;
+      }
     </style>
     <style>
       body {
@@ -365,6 +405,11 @@
       import { FBXLoader } from "/js/FBXLoader.js";
       import { FontLoader } from "/js/FontLoader.js";
       import { TextGeometry } from "/js/TextGeometry.js";
+      import { otherPlayer } from "/js/otherPlayer.js";
+      import { Villager } from "/js/villager.js";
+      import { TimerResource } from "/js/timerResource.js";
+      import { Joystick } from "/js/joystick.js";
+      import { Inventory } from "/js/inventoryManager.js";
       //import * as HOUSE from "/structure/house/01_medieval_house_low_poly.glb"
       //https://unpkg.com/three@0.141.0/examples/jsm/geometries/TextGeometry.js
       //https://unpkg.com/three@0.141.0/examples/jsm/curves/NURBSUtils.js
@@ -391,985 +436,7 @@
 
       // import { GUI } from "https://unpkg.com/three@0.141.0/examples//jsm/libs/lil-gui.module.min.js";
 
-      ////import Ammo from "/js/ammo.js";
-
       //import { annuaire } from "/annuaire.js";
-      class shop {
-        constructor() {
-          this.obj = [];
-        }
-        createShop(obj) {
-          this.obj.push(obj);
-        }
-        updateShop(player) {
-          for (let i = 0; i < this.obj.length; i++) {
-            if (
-              Math.round(
-                player.position
-                  .clone()
-                  .distanceTo(this.obj[i].position.clone()) * 10
-              ) /
-                10 <
-              5
-            ) {
-              console.log("zesdxcfvgbhj");
-              player.position.set(0, 50, 0);
-            }
-          }
-        }
-      }
-      class otherPlayer {
-        constructor() {
-          this.clock = new THREE.Clock();
-          this.mixer = [];
-          this.animationActions = [];
-          this.init();
-        }
-        init() {}
-
-        CreatePlayerAnimation(anim, player) {
-          let index = this.mixer.length || 0;
-          this.mixer[index] = new THREE.AnimationMixer(player);
-          console.log(this.mixer[index].getRoot());
-          console.log(player);
-          console.log(player == this.mixer[index].getRoot());
-          // console.log(fbx);
-          if (anim[0]) {
-            const animationAction = this.mixer[index].clipAction(anim[1]);
-            animationAction.play();
-            this.activeAction = animationAction;
-            this.animationActions[index] = [];
-            this.animationActions[index]["root"] =
-              this.mixer[index].getRoot().id;
-            this.animationActions[index]["Idle"] = this.mixer[index].clipAction(
-              anim[0]
-            );
-            this.animationActions[index]["run"] = this.mixer[index].clipAction(
-              anim[1]
-            );
-            console.log(this.animationActions);
-          }
-        }
-        update() {
-          let delta = this.clock.getDelta();
-          for (let i = 0; i < this.mixer.length; i++) {
-            if (this.mixer[i]) {
-              this.mixer[i].update(delta);
-            }
-          }
-        }
-        movePlayers() {
-          this.setAction(action);
-        }
-        setAction(action, id) {
-          // toAction.play();
-          if (action == "Run") action = "run";
-          //console.log(this.animationActions);
-          //console.log(this.animationActions.find((e)=>e.root==id));
-          let toAction = this.animationActions.find((e) => e.root == id)[
-            action
-          ];
-          //console.log(this.animationActions.find((e)=>e.root==id)[action]);
-          if (toAction != this.activeAction && toAction != undefined) {
-            //console.log(toAction);
-            this.lastAction = this.activeAction;
-            this.activeAction = toAction;
-            //lastAction.stop()
-            this.lastAction.fadeOut(0.5);
-            toAction.reset();
-            toAction.fadeIn(0.5);
-            toAction.play();
-          }
-        }
-        deletePlayer(id) {
-          console.log(id);
-        }
-      }
-
-      class Color {
-        constructor(r, g, b) {
-          this.set(r, g, b);
-        }
-
-        toRgb() {
-          return `rgb(${Math.round(this.r)}, ${Math.round(
-            this.g
-          )}, ${Math.round(this.b)})`;
-        }
-
-        toHex() {
-          return rgbToHex(
-            Math.round(this.r),
-            Math.round(this.g),
-            Math.round(this.b)
-          );
-        }
-
-        set(r, g, b) {
-          this.r = this.clamp(r);
-          this.g = this.clamp(g);
-          this.b = this.clamp(b);
-        }
-
-        hueRotate(angle = 0) {
-          angle = (angle / 180) * Math.PI;
-          const sin = Math.sin(angle);
-          const cos = Math.cos(angle);
-
-          this.multiply([
-            0.213 + cos * 0.787 - sin * 0.213,
-            0.715 - cos * 0.715 - sin * 0.715,
-            0.072 - cos * 0.072 + sin * 0.928,
-            0.213 - cos * 0.213 + sin * 0.143,
-            0.715 + cos * 0.285 + sin * 0.14,
-            0.072 - cos * 0.072 - sin * 0.283,
-            0.213 - cos * 0.213 - sin * 0.787,
-            0.715 - cos * 0.715 + sin * 0.715,
-            0.072 + cos * 0.928 + sin * 0.072,
-          ]);
-        }
-
-        grayscale(value = 1) {
-          this.multiply([
-            0.2126 + 0.7874 * (1 - value),
-            0.7152 - 0.7152 * (1 - value),
-            0.0722 - 0.0722 * (1 - value),
-            0.2126 - 0.2126 * (1 - value),
-            0.7152 + 0.2848 * (1 - value),
-            0.0722 - 0.0722 * (1 - value),
-            0.2126 - 0.2126 * (1 - value),
-            0.7152 - 0.7152 * (1 - value),
-            0.0722 + 0.9278 * (1 - value),
-          ]);
-        }
-
-        sepia(value = 1) {
-          this.multiply([
-            0.393 + 0.607 * (1 - value),
-            0.769 - 0.769 * (1 - value),
-            0.189 - 0.189 * (1 - value),
-            0.349 - 0.349 * (1 - value),
-            0.686 + 0.314 * (1 - value),
-            0.168 - 0.168 * (1 - value),
-            0.272 - 0.272 * (1 - value),
-            0.534 - 0.534 * (1 - value),
-            0.131 + 0.869 * (1 - value),
-          ]);
-        }
-
-        saturate(value = 1) {
-          this.multiply([
-            0.213 + 0.787 * value,
-            0.715 - 0.715 * value,
-            0.072 - 0.072 * value,
-            0.213 - 0.213 * value,
-            0.715 + 0.285 * value,
-            0.072 - 0.072 * value,
-            0.213 - 0.213 * value,
-            0.715 - 0.715 * value,
-            0.072 + 0.928 * value,
-          ]);
-        }
-
-        multiply(matrix) {
-          const newR = this.clamp(
-            this.r * matrix[0] + this.g * matrix[1] + this.b * matrix[2]
-          );
-          const newG = this.clamp(
-            this.r * matrix[3] + this.g * matrix[4] + this.b * matrix[5]
-          );
-          const newB = this.clamp(
-            this.r * matrix[6] + this.g * matrix[7] + this.b * matrix[8]
-          );
-          this.r = newR;
-          this.g = newG;
-          this.b = newB;
-        }
-
-        brightness(value = 1) {
-          this.linear(value);
-        }
-        contrast(value = 1) {
-          this.linear(value, -(0.5 * value) + 0.5);
-        }
-
-        linear(slope = 1, intercept = 0) {
-          this.r = this.clamp(this.r * slope + intercept * 255);
-          this.g = this.clamp(this.g * slope + intercept * 255);
-          this.b = this.clamp(this.b * slope + intercept * 255);
-        }
-
-        invert(value = 1) {
-          this.r = this.clamp((value + (this.r / 255) * (1 - 2 * value)) * 255);
-          this.g = this.clamp((value + (this.g / 255) * (1 - 2 * value)) * 255);
-          this.b = this.clamp((value + (this.b / 255) * (1 - 2 * value)) * 255);
-        }
-
-        hsl() {
-          // Code taken from https://stackoverflow.com/a/9493060/2688027, licensed under CC BY-SA.
-          const r = this.r / 255;
-          const g = this.g / 255;
-          const b = this.b / 255;
-          const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
-          let h,
-            s,
-            l = (max + min) / 2;
-
-          if (max === min) {
-            h = s = 0;
-          } else {
-            const d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-            switch (max) {
-              case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
-                break;
-
-              case g:
-                h = (b - r) / d + 2;
-                break;
-
-              case b:
-                h = (r - g) / d + 4;
-                break;
-            }
-            h /= 6;
-          }
-
-          return {
-            h: h * 100,
-            s: s * 100,
-            l: l * 100,
-          };
-        }
-
-        clamp(value) {
-          if (value > 255) {
-            value = 255;
-          } else if (value < 0) {
-            value = 0;
-          }
-          return value;
-        }
-      }
-
-      class Solver {
-        constructor(target, baseColor) {
-          this.target = target;
-          this.targetHSL = target.hsl();
-          this.reusedColor = new Color(0, 0, 0);
-        }
-
-        solve() {
-          const result = this.solveNarrow(this.solveWide());
-          return {
-            values: result.values,
-            loss: result.loss,
-            filter: this.css(result.values),
-            filterRaw: this.raw(result.values),
-          };
-        }
-
-        solveWide() {
-          const A = 5;
-          const c = 15;
-          const a = [60, 180, 18000, 600, 1.2, 1.2];
-
-          let best = { loss: Infinity };
-          for (let i = 0; best.loss > 25 && i < 3; i++) {
-            const initial = [50, 20, 3750, 50, 100, 100];
-            const result = this.spsa(A, a, c, initial, 1000);
-            if (result.loss < best.loss) {
-              best = result;
-            }
-          }
-          return best;
-        }
-
-        solveNarrow(wide) {
-          const A = wide.loss;
-          const c = 2;
-          const A1 = A + 1;
-          const a = [0.25 * A1, 0.25 * A1, A1, 0.25 * A1, 0.2 * A1, 0.2 * A1];
-          return this.spsa(A, a, c, wide.values, 500);
-        }
-
-        spsa(A, a, c, values, iters) {
-          const alpha = 1;
-          const gamma = 0.16666666666666666;
-
-          let best = null;
-          let bestLoss = Infinity;
-          const deltas = new Array(6);
-          const highArgs = new Array(6);
-          const lowArgs = new Array(6);
-
-          for (let k = 0; k < iters; k++) {
-            const ck = c / Math.pow(k + 1, gamma);
-            for (let i = 0; i < 6; i++) {
-              deltas[i] = Math.random() > 0.5 ? 1 : -1;
-              highArgs[i] = values[i] + ck * deltas[i];
-              lowArgs[i] = values[i] - ck * deltas[i];
-            }
-
-            const lossDiff = this.loss(highArgs) - this.loss(lowArgs);
-            for (let i = 0; i < 6; i++) {
-              const g = (lossDiff / (2 * ck)) * deltas[i];
-              const ak = a[i] / Math.pow(A + k + 1, alpha);
-              values[i] = fix(values[i] - ak * g, i);
-            }
-
-            const loss = this.loss(values);
-            if (loss < bestLoss) {
-              best = values.slice(0);
-              bestLoss = loss;
-            }
-          }
-          return { values: best, loss: bestLoss };
-
-          function fix(value, idx) {
-            let max = 100;
-            if (idx === 2 /* saturate */) {
-              max = 7500;
-            } else if (idx === 4 /* brightness */ || idx === 5 /* contrast */) {
-              max = 200;
-            }
-
-            if (idx === 3 /* hue-rotate */) {
-              if (value > max) {
-                value %= max;
-              } else if (value < 0) {
-                value = max + (value % max);
-              }
-            } else if (value < 0) {
-              value = 0;
-            } else if (value > max) {
-              value = max;
-            }
-            return value;
-          }
-        }
-
-        loss(filters) {
-          // Argument is array of percentages.
-          const color = this.reusedColor;
-          color.set(0, 0, 0);
-
-          color.invert(filters[0] / 100);
-          color.sepia(filters[1] / 100);
-          color.saturate(filters[2] / 100);
-          color.hueRotate(filters[3] * 3.6);
-          color.brightness(filters[4] / 100);
-          color.contrast(filters[5] / 100);
-
-          const colorHSL = color.hsl();
-          return (
-            Math.abs(color.r - this.target.r) +
-            Math.abs(color.g - this.target.g) +
-            Math.abs(color.b - this.target.b) +
-            Math.abs(colorHSL.h - this.targetHSL.h) +
-            Math.abs(colorHSL.s - this.targetHSL.s) +
-            Math.abs(colorHSL.l - this.targetHSL.l)
-          );
-        }
-
-        raw(filters) {
-          function fmt(idx, multiplier = 1) {
-            return Math.round(filters[idx] * multiplier);
-          }
-          return `brightness(0) saturate(100%) invert(${fmt(0)}%) sepia(${fmt(
-            1
-          )}%) saturate(${fmt(2)}%) hue-rotate(${fmt(
-            3,
-            3.6
-          )}deg) brightness(${fmt(4)}%) contrast(${fmt(5)}%)`;
-        }
-
-        css(filters) {
-          function fmt(idx, multiplier = 1) {
-            return Math.round(filters[idx] * multiplier);
-          }
-          return `filter: brightness(0) saturate(100%) invert(${fmt(
-            0
-          )}%) sepia(${fmt(1)}%) saturate(${fmt(2)}%) hue-rotate(${fmt(
-            3,
-            3.6
-          )}deg) brightness(${fmt(4)}%) contrast(${fmt(5)}%);`;
-        }
-      }
-
-      function hexToRgb(hex) {
-        // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-        hex = hex.replace(shorthandRegex, (m, r, g, b) => {
-          return r + r + g + g + b + b;
-        });
-
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result
-          ? [
-              parseInt(result[1], 16),
-              parseInt(result[2], 16),
-              parseInt(result[3], 16),
-            ]
-          : null;
-      }
-
-      class TimerResource {
-        constructor(obj, scene) {
-          this.obj = obj;
-          this.prop = obj.prop;
-          this.timer = 0;
-          this.scene = scene;
-          this.fontLoader = new FontLoader();
-
-          this.setTimer();
-        }
-
-        setTimer() {
-          if (this.prop == "stone") this.addTimer(5);
-          else if (this.prop == "wheat") this.addTimer(2);
-          else if (this.prop == "wood") this.addTimer(5);
-        }
-
-        addTimer(time) {
-          this.obj.collectable = false;
-          this.fontLoader.load(
-            "https://unpkg.com/three@0.141.0/examples/fonts/helvetiker_regular.typeface.json",
-            (font) => {
-              const geometry = new TextGeometry("00:0" + time, {
-                font: font,
-                size: 5,
-                height: 5,
-                //curveSegments: 12,
-                //bevelEnabled: true,
-                //bevelThickness: 10,
-                //bevelSize: 8,
-                //bevelOffset: 0,
-                //bevelSegments: 5,
-              });
-
-              let text = new THREE.Mesh(
-                geometry,
-                new THREE.MeshPhongMaterial({ color: 0x3e00cf })
-              );
-              text.position.set(
-                this.obj.position.x - 10,
-                this.obj.position.y + 10,
-                this.obj.position.z
-              );
-              text.time = time;
-              this.scene.add(text);
-              text.name = text.id;
-              this.updateTimer(time, text.id);
-            }
-          );
-        }
-
-        updateTimer(time, id) {
-          this.currentId = id;
-          let interval = setInterval(() => {
-            if (!this.scene.getObjectByName(this.currentId)) return;
-            if (Number(this.scene.getObjectByName(this.currentId).time) != 0) {
-              let newTimeProp =
-                Number(this.scene.getObjectByName(this.currentId).time) - 1;
-              let position = {
-                  x: this.scene.getObjectByName(this.currentId).position.x,
-                  y: this.scene.getObjectByName(this.currentId).position.y,
-                  z: this.scene.getObjectByName(this.currentId).position.z,
-                },
-                newId = this.scene.getObjectByName(this.currentId).id;
-              this.scene.remove(this.scene.getObjectByName(this.currentId));
-              this.createtext(
-                newTimeProp,
-                position.x,
-                position.y,
-                position.z,
-                newId
-              );
-            } else {
-              this.obj.collectable = true;
-              this.scene.remove(this.scene.getObjectByName(this.currentId));
-              console.log("you can collect");
-              clearInterval(interval);
-            }
-          }, 1000);
-        }
-
-        createtext(time, x, y, z, id) {
-          this.fontLoader.load(
-            "https://unpkg.com/three@0.141.0/examples/fonts/helvetiker_regular.typeface.json",
-            (font) => {
-              const geometry = new TextGeometry("00:0" + time, {
-                font: font,
-                size: 5,
-                height: 5,
-                //curveSegments: 12,
-                //bevelEnabled: true,
-                //bevelThickness: 10,
-                //bevelSize: 8,
-                //bevelOffset: 0,
-                //bevelSegments: 5,
-              });
-
-              let text = new THREE.Mesh(
-                geometry,
-                new THREE.MeshPhongMaterial({ color: 0x3e00cf })
-              );
-              text.position.set(x, y, z);
-              text.name = id;
-              text.time = time;
-              this.scene.add(text);
-              return (this.currentId = text.name);
-            }
-          );
-        }
-      }
-
-      //class ShowResources {
-      //  constructor() {
-      //
-      //  }
-      //}
-
-      class Villager {
-        constructor(scene, loader) {
-          this.scene = scene;
-          this.FBXLoader = new FBXLoader();
-          this.mixer = [];
-          this.villagers = [];
-          this.villagerActions = [];
-          this.clock = new THREE.Clock();
-          this.villagerSpeed = 0.2;
-          this.activeAction = [];
-          this.lastAction = [];
-          this.villagerImgFilter = [];
-          //this.id = id
-          //this.villager = this.villagers[id]
-          //this.createVillager(position, house);
-        }
-        createVillager(position, house) {
-          console.log(...position);
-          this.houseN = house;
-          for (let i = 1; i < 4; i++) {
-            this.FBXLoader.load(
-              "/character/stickman/source/Simple_Character.fbx",
-              (fbx) => {
-                this.villagers[house + "." + i] = fbx;
-                console.log(position);
-                this.villagers[house + "." + i].position.set(...position);
-                this.villagers[house + "." + i].scale.set(0.03, 0.03, 0.03);
-                this.villagers[house + "." + i].house = house;
-                this.villagers[house + "." + i].job = "Is not working";
-                this.villagers[house + "." + i].housePos = position;
-
-                this.villagers[house + "." + i].stay = false;
-                this.villagers[house + "." + i].returnHouse = false;
-
-                let new_mtl = new THREE.MeshBasicMaterial({
-                  color: 0xffffff,
-                });
-
-                this.villagers[house + "." + i].traverse((o) => {
-                  o.material = new_mtl;
-                });
-
-                this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
-
-                if (fbx.animations[0]) {
-                  const animationAction = this.mixer[
-                    house + "." + i
-                  ].clipAction(fbx.animations[1]);
-                  //animationAction.play();
-                  this.activeAction[house + "." + i] = animationAction;
-                  this.villagerActions[house + "." + i] = [];
-                  this.villagerActions[house + "." + i]["idle"] = this.mixer[
-                    house + "." + i
-                  ].clipAction(fbx.animations[2]);
-                  this.villagerActions[house + "." + i]["run"] = this.mixer[
-                    house + "." + i
-                  ].clipAction(fbx.animations[0]);
-                }
-                this.scene.add(this.villagers[house + "." + i]);
-              },
-              undefined,
-              (error) => {
-                console.error(error);
-              }
-            );
-            setTimeout(() => {
-              this.modelReady = true;
-              console.log(this.villagerActions);
-              console.log("model ready");
-            }, 500);
-          }
-          this.addVillagerMenu();
-        }
-        addVillagerMenu() {
-          if (this.houseN == 1) return;
-          if (document.querySelector("#noVillagerText")?.style) {
-            document.querySelector("#noVillagerText").style.visibility =
-              "hidden";
-          }
-          let workerList = "";
-          for (let i = 1; i < this.houseN; i++) {
-            console.log(i);
-            workerList =
-              workerList +
-              `<dl class="villagerList">
-              <dt class="houseNumber">House n°${i}</dt>
-              <dd class="villagerName">
-                <label>
-                  <img style="${
-                    this.villagerImgFilter[i + ".1"] || ""
-                  }" class="villagerColor" src="/img/pngegg.png">
-                <input villagerid="${
-                  i + ".1"
-                }" class="color" type="color" name="colorPicker">
-            </label>
-            <button villagerid="${i + ".1"}" class="jobButton">Villageois ${i}.1
-            <br/>
-            <div villagerid="${i + ".1"}" class="job">${
-                this.villagers[i + ".1"].job
-              }</div>
-            </button>
-            </dd>
-            <dd class="villagerName">
-              <label>
-                    <img style="${
-                      this.villagerImgFilter[i + ".2"] || ""
-                    }" class="villagerColor" src="/img/pngegg.png">
-                  <input villagerid="${
-                    i + ".2"
-                  }" class="color" type="color" name="colorPicker">
-              </label>
-              <button villagerid="${
-                i + ".2"
-              }" class="jobButton">Villageois ${i}.2<br/>
-            <div villagerid="${i + ".2"}" class="job">${
-                this.villagers[i + ".2"].job
-              }</div>
-            </button>
-            </dd>
-            <dd class="villagerName">
-              <label>
-                  <img style="${
-                    this.villagerImgFilter[i + ".3"] || ""
-                  }" class="villagerColor" src="/img/pngegg.png">
-                <input villagerid="${
-                  i + ".3"
-                }" class="color" type="color" name="colorPicker">
-            </label>
-              <button villagerid="${
-                i + ".3"
-              }" class="jobButton">Villageois ${i}.3<br/>
-            <div villagerid="${i + ".3"}" class="job">${
-                this.villagers[i + ".3"].job
-              }
-              </div>
-              </button>
-              </dd>
-              </dl>`;
-          }
-          //this.addColorPicker();
-
-          document.querySelector("#collectMenu").innerHTML = workerList;
-          let colorWell = document.querySelectorAll(".color");
-          colorWell.forEach((e) => {
-            e.removeEventListener("change", (e) => this.updateColor(e), false);
-          });
-          colorWell.forEach((e) => {
-            e.addEventListener("change", (e) => this.updateColor(e), false);
-          });
-          //colorWell.select();
-          document.querySelectorAll(".jobButton").forEach((e) => {
-            e.removeEventListener("click", (e) => this.doJob(e), false);
-          });
-          document.querySelectorAll(".jobButton").forEach((e) => {
-            e.addEventListener("click", (e) => this.doJob(e), false);
-          });
-        }
-
-        updateColor(e) {
-          console.log(e.target.value);
-          const rgb = hexToRgb(e.target.value);
-          console.log(rgb);
-          if (rgb.length !== 3) {
-            alert("Invalid format!");
-            return;
-          }
-
-          const color = new Color(rgb[0], rgb[1], rgb[2]);
-          const solver = new Solver(color);
-          const result = solver.solve();
-          e.path[1].children[0].style = result.filter;
-          this.villagerImgFilter[
-            e.path[1].children[1].getAttribute("villagerid")
-          ] = result.filter;
-          console.log(result);
-          let new_mtl = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(
-              parseInt(e.target.value.replace("#", "0x"), 16)
-            ),
-          });
-
-          this.villagers[e.target.getAttribute("villagerid")].traverse((o) => {
-            o.material = new_mtl;
-          });
-        }
-
-        //addColorPicker() {
-        //  this.pickr = Pickr.create({
-        //    el: ".color-picker",
-        //    theme: "classic", // or 'monolith', or 'nano'
-        //
-        //    swatches: [
-        //      "rgba(244, 67, 54, 1)",
-        //      "rgba(233, 30, 99, 0.95)",
-        //      "rgba(156, 39, 176, 0.9)",
-        //      "rgba(103, 58, 183, 0.85)",
-        //      "rgba(63, 81, 181, 0.8)",
-        //      "rgba(33, 150, 243, 0.75)",
-        //      "rgba(3, 169, 244, 0.7)",
-        //      "rgba(0, 188, 212, 0.7)",
-        //      "rgba(0, 150, 136, 0.75)",
-        //      "rgba(76, 175, 80, 0.8)",
-        //      "rgba(139, 195, 74, 0.85)",
-        //      "rgba(205, 220, 57, 0.9)",
-        //      "rgba(255, 235, 59, 0.95)",
-        //      "rgba(255, 193, 7, 1)",
-        //    ],
-        //
-        //    components: {
-        //      // Main components
-        //      preview: true,
-        //      opacity: true,
-        //      hue: true,
-        //
-        //      // Input / output Options
-        //      interaction: {
-        //        hex: true,
-        //        rgba: true,
-        //        hsla: true,
-        //        hsva: true,
-        //        cmyk: true,
-        //        input: true,
-        //        clear: true,
-        //        save: true,
-        //      },
-        //    },
-        //  });
-        //  this.pickr.on("save", (color, instance) => {
-        //    console.log('Event: "save"', color, instance);
-        //  });
-        //}
-
-        doJob(e) {
-          this.villagers[e.target.getAttribute("villagerid")].job = `from ${
-            this.scene.getObjectByName("click").prop
-          } at ${this.scene.getObjectByName("click").position.x / 20}, ${
-            this.scene.getObjectByName("click").position.z / 20
-          } to House  n°${e.target.getAttribute("villagerid").split(".")[0]}`;
-          this.villagers[e.target.getAttribute("villagerid")].collectTarget = [
-            this.scene.getObjectByName("click").position.x,
-            -25,
-            this.scene.getObjectByName("click").position.z,
-          ];
-          this.villagers[e.target.getAttribute("villagerid")].jobType =
-            this.scene.getObjectByName("click").prop;
-
-          this.addVillagerMenu();
-        }
-
-        returnToHouse(id) {
-          this.villagers[id].returnHouse = true;
-          this.villagers[id].stay = false;
-        }
-
-        villagerStay(id) {
-          let type = this.villagers[id].jobType;
-          if (this.villagers[id].returnHouse) {
-          }
-          if (type == "wood") {
-            setTimeout(() => {
-              this.returnToHouse(id);
-            }, 1500);
-          } else if (type == "stone") {
-            setTimeout(() => {
-              this.returnToHouse(id);
-            }, 3000);
-          }
-        }
-
-        moveVillagers(id, target) {
-          //this.setAction(this.villagerActions[0]);
-          if (!this.villagers[id]?.job) return;
-          if (this.villagers[id].job == "Is not working") return;
-          let directionX = 0,
-            directionZ = 0;
-
-          let mesh1 = {
-            x: this.villagers[id].position.x,
-            z: this.villagers[id].position.z,
-          };
-          let mesh2 = {
-            x: target[0],
-            z: target[2],
-          };
-
-          var dx = Math.abs(mesh1.x - mesh2.x);
-          if (mesh1.x > mesh2.x) {
-            this.villagers[id].position.x -= Math.min(dx, this.villagerSpeed);
-            directionX = -90;
-          } else if (mesh1.x < mesh2.x) {
-            this.villagers[id].position.x += Math.min(dx, this.villagerSpeed);
-            directionX = 90;
-          }
-
-          var dz = Math.abs(mesh1.z - mesh2.z);
-          if (mesh1.z > mesh2.z) {
-            this.villagers[id].position.z -= Math.min(dz, this.villagerSpeed);
-            directionZ = 180;
-          } else if (mesh1.z < mesh2.z) {
-            this.villagers[id].position.z += Math.min(dz, this.villagerSpeed);
-            directionZ = 0;
-          }
-
-          if (mesh1.x == mesh2.x && mesh1.z == mesh2.z) {
-            if (
-              this.villagers[id].stay == false ||
-              this.villagers[id].stay == undefined
-            ) {
-              this.villagers[id].stay = true;
-              //this.villagerStay(id);
-            }
-            this.setAction(this.villagerActions[id]["idle"], id);
-          } else {
-            //console.log((directionX + directionZ) / 2);
-            if (this.villagers[id].returnHouse) {
-              this.villagers[id].lookAt(...this.villagers[id].housePos);
-              //this.villagers[id].rotation.x = 0;
-              //this.villagers[id].rotation.z = 0;
-              //this.villagers[id].rotation.y =
-              //  ((((directionX + directionZ) / 2) * Math.PI) / 180) * -1;
-            } else {
-              this.villagers[id].lookAt(...this.villagers[id].collectTarget);
-              //this.villagers[id].rotation.x = 0;
-              //this.villagers[id].rotation.z = 0;
-              //this.villagers[id].rotation.y =
-              //  (((directionX + directionZ) / 2) * Math.PI) / 180;
-            }
-
-            this.setAction(this.villagerActions[id]["run"], id);
-          }
-        }
-
-        //startTimer(id) {
-        //  this.time = 0;
-        //  this.time = setInterval(() => {
-        //    if (this.villagers[id].stay == true) return;
-        //    this.time += 100;
-        //  }, 100);
-        //
-        //}
-
-        work() {
-          if (this.houseN == 1) return;
-          for (let i = 1; i < this.houseN; i++) {
-            for (let j = 1; j < 4; j++) {
-              //this.setAction(this.villagerActions[0]);
-              if (!this.villagers[i + "." + j]?.job) return;
-              //if (this.villagers[i + "." + j].job == "Is not working") return
-
-              if (
-                this.villagers[i + "." + j].stay == true &&
-                !this.villagers[i + "." + j].returnHouse
-              ) {
-                this.villagerStay(i + "." + j);
-              }
-              if (
-                !this.villagers[i + "." + j].returnHouse &&
-                !this.villagers[i + "." + j].stay
-              ) {
-                this.moveVillagers(
-                  i + "." + j,
-                  this.villagers[i + "." + j].collectTarget
-                );
-                //if (!this.startingTimer) {
-                //  this.startingTimer = true;
-                //  this.startTimer(i + "." + j);
-                //}
-              }
-              if (
-                this.villagers[i + "." + j].returnHouse == true &&
-                !this.villagers[i + "." + j].stay
-              ) {
-                this.moveVillagers(
-                  i + "." + j,
-                  this.villagers[i + "." + j].housePos
-                );
-              }
-              if (
-                this.villagers[i + "." + j].returnHouse == true &&
-                this.villagers[i + "." + j].stay == true
-              ) {
-                this.addResources(this.villagers[i + "." + j].jobType, 5);
-                this.villagers[i + "." + j].returnHouse = false;
-                this.villagers[i + "." + j].stay = false;
-              }
-            }
-          }
-        }
-
-        addResources(value, nbr) {
-          if (!document.querySelector(`#${value}Count`)?.textContent) return;
-          document.querySelector(`#${value}Count`).textContent =
-            Number(document.querySelector(`#${value}Count`).textContent) + nbr;
-        }
-
-        setAction(toAction, id) {
-          // toAction.play();
-          if (toAction != this.activeAction[id] && toAction != undefined) {
-            //console.log(toAction);
-            this.lastAction[id] = this.activeAction[id];
-            this.activeAction[id] = toAction;
-            //lastAction.stop()
-            this.lastAction[id].fadeOut(1);
-            toAction.reset();
-            toAction.fadeIn(1);
-            toAction.play();
-          }
-        }
-
-        update() {
-          this.delta = this.clock.getDelta();
-
-          if (this.mixer && this.modelReady == true) {
-            for (let i = 1; i < this.houseN; i++) {
-              if (!this.mixer[i + ".3"]) return;
-              this.mixer[i + ".1"].update(this.delta);
-              this.mixer[i + ".2"].update(this.delta);
-              this.mixer[i + ".3"].update(this.delta);
-            }
-            //for (const e of this.mixer) {
-            //  e.update(this.delta)
-            //}
-            //this.mixer.forEach((e) => {
-            //  e.update(this.delta);
-            //});
-            //this.animationActions[0].play()
-            //console.log(this.villagers["1.1"]);
-            //console.log(this.villagerActions[0].isRunning());
-            //this.mixer["1.1"].update(this.delta);
-            //this.mixer.update(this.delta);
-          }
-          //console.log(this.player.position);
-
-          this.work();
-          //this.moveVillagers();
-        }
-      }
 
       class App {
         constructor() {
@@ -1433,9 +500,6 @@
           this.villagerActions = [];
           this.mixer = [];
 
-          this.rotationCanvas = 0;
-          this.rotationCanvasEnable = false;
-
           this.seed = 69;
           this.mapSize = { x: 20, z: 20 };
 
@@ -1444,6 +508,8 @@
           this.shop = [];
           this.setPos = [];
           this.idealOffset = [0, 30, 40];
+          this.Joystick = new Joystick();
+          this.inventory = new Inventory();
 
           this.playerRotation = -1;
           this.socket.on("partyList", (data) => {
@@ -1476,7 +542,28 @@
 
           // this.startAmmo();
           // this.update();
+          this.preLoader();
           this.ShowMenu();
+        }
+
+        preLoader() {
+          this.preLoaded = {};
+          let loader = (path, type) => {
+            new GLTFLoader().load(
+              path,
+              (gltf) => {
+                gltf.scene.scale.set(0, 0, 0);
+                this.scene.add(gltf.scene);
+                this.preLoaded[type] = gltf.scene;
+              },
+              undefined,
+              (error) => {
+                console.error(error);
+              }
+            );
+          };
+          loader("/structure/low-poly_rock/scene.gltf", "stone");
+          loader("/structure/tree_low-poly_3d_model/scene.gltf", "tree");
         }
 
         SetupStartButton() {
@@ -1501,18 +588,7 @@
           //this.showResources();
           //this.animFrameId = window.requestAnimationFrame(this.update);
           this.update();
-          //if (document.getElementById("Ipad").checked == true) {
-          //  this.SetupTactileButton();
-          //}
-          // this.ShowMenu(false);
-          //Set
         };
-
-        //createPathfinding() {
-        //  this.pathfinding = new Pathfinding()
-        //  this.zone = "world"
-        //  this.pathfinding.setZoneData(this.zone, Pathfinding.createZone())
-        //}
 
         addEvent() {
           //e,unit, unitN,path,x,y,z,scale,house,rotaion
@@ -1522,9 +598,13 @@
           document
             .querySelector("#showCollectMenu")
             .addEventListener("click", (e) => this.toggleMenu(e), false);
-          //document
-          //  .querySelector("#buildHouse")
-          //  .addEventListener("click", (e) => this.buildHouse(e), false);
+          document.querySelectorAll(".produit.lootbox").forEach((e) => {
+            e.addEventListener("click", (d) => {
+              console.log(e.getAttribute("lb-lv"));
+              this.inventory.toggleLootbox();
+              this.opening();
+            });
+          });
           document
             .querySelector("#buildHouse")
             .addEventListener(
@@ -1605,19 +685,6 @@
                 ),
               false
             );
-          //document
-          //  .querySelector("#buildMine")
-          //  .addEventListener("click", (e) => this.buildMine(e), false);
-          //document
-          //  .querySelector("#buildBlacksmithHouse")
-          //  .addEventListener(
-          //    "click",
-          //    (e) => this.buildBlacksmithHouse(e),
-          //    false
-          //  );
-          //document
-          //  .querySelector("#buildShop")
-          //  .addEventListener("click", (e) => this.buildShop(e), false);
         }
 
         toggleMenu(e) {
@@ -1627,113 +694,88 @@
           $("#collectMenu").toggle();
         }
 
-        // loadCharacter = () => {
-        //   console.log("e");
-        // };
+        opening() {
+          this.isOpening = true;
 
-        //load(path) {
-        //  this.animationActions = [];
-        //
-        //  this.activeAction;
-        //  this.loader.load(
-        //    path,
-        //    (fbx) => {
-        //      console.log(fbx);
-        //      this.player = this.player = fbx;
-        //      this.player.rotation.set(0, this.rotationView, 0);
-        //      this.player.scale.set(this.scale, this.scale, this.scale);
-        //      this.mixer = new THREE.AnimationMixer(fbx);
-        //      // console.log(fbx);
-        //
-        //      const animationAction = this.mixer.clipAction(fbx.animations[0]);
-        //      this.activeAction = animationAction;
-        //      this.animationActions.push(animationAction);
-        //      // this.setAction(animationAction);
-        //
-        //      // const action = this.mixer.clipAction(fbx.animations[0]);
-        //      // action.play();
-        //
-        //      this.scene.add(this.player);
-        //      // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
-        //      // console.log(this.player.rotation);
-        //      this.loadAction("/character/mutant/Idle.fbx", "idle");
-        //      this.loadAction("/character/mutant/Walking.fbx", "run");
-        //      this.loadAction("/character/mutant/Jumping.fbx", "jump");
-        //      this.loadAction("/character/mutant/Mutant Swiping.fbx", "attack");
-        //    },
-        //    undefined,
-        //    (error) => {
-        //      console.error(error);
-        //    }
-        //  );
-        //
-        //  // this.loader.load(
-        //  //   "/mutant/Idle.fbx",
-        //  //   (anim) => {
-        //  //     console.log(anim);
-        //  //     const animationAction = this.mixer.clipAction(anim.animations[0]);
-        //  //     this.animationActions.push(animationAction);
-        //  //     // animationsFolder.add(animations, "default");
-        //
-        //  //     // animationAction.play();
-        //
-        //  //     // this.setAction(animationAction);
-        //
-        //  //     // const action = this.mixer.clipAction(anim.animations[0]);
-        //  //     // action.play();
-        //  //     // animationsFolder.add(animations, "walking");
-        //  //     // console.log(fbx);
-        //  //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
-        //  //     // this.assets["walkAnim"] = fbx;
-        //  //     // this.zombieAnims = {};
-        //  //     // this.SetAnim("run", this.assets["walkAnim"]);
-        //  //   },
-        //  //   undefined,
-        //  //   (error) => {
-        //  //     console.error(error);
-        //  //   }
-        //  // );
-        //
-        //  // this.loader.load(
-        //  //   "/mutant/Walking.fbx",
-        //  //   (fbx) => {
-        //  //     console.log(fbx);
-        //  //     const animationAction = this.mixer.clipAction(fbx.animations[0]);
-        //  //     this.animationActions.push(animationAction);
-        //  //     // const action = this.mixer.clipAction(fbx.animations[0]);
-        //  //     // action.play();
-        //  //     // animationsFolder.add(animations, "walking");
-        //  //     // console.log(fbx);
-        //  //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
-        //  //     // this.assets["walkAnim"] = fbx;
-        //  //     // this.zombieAnims = {};
-        //  //     // this.SetAnim("run", this.assets["walkAnim"]);
-        //  //   },
-        //  //   undefined,
-        //  //   (error) => {
-        //  //     console.error(error);
-        //  //   }
-        //  // );
-        //
-        //  // this.SetAnim("idle", this.assets["idleAnim"]);
-        //  // this.SetAnim("run", this.assets["runAnim"]);
-        //  // this.SetAnim("attack", this.assets["attackAnim"]);
-        //  // this.SetAnim("die", this.assets["dieAnim"]);
-        //  setTimeout(() => {
-        //    this.modelReady = true;
-        //    console.log(this.animationActions);
-        //    console.log("model ready");
-        //  }, 500);
-        //}
+          this.openingScene = new THREE.Scene();
+
+          this.openingCamera = new THREE.PerspectiveCamera(
+            60,
+            window.innerWidth / window.innerHeight,
+            0.001,
+            1000
+          );
+          //0,2,3
+          this.openingCamera.position.set(0, 2, 3);
+          this.openingCamera.lookAt(0, 1, 0);
+          const ambiantLight = new THREE.AmbientLight(0xffffff, 1); // soft white light
+          this.openingScene.add(ambiantLight);
+          this.light = new THREE.DirectionalLight(0xffffff, 1);
+          this.light.position.set(0, 0, 10);
+          this.openingScene.add(this.light);
+          this.addOpeningScene();
+        }
+
+        addOpeningScene() {
+          this.FBXLoader.load(
+            "/structure/low-poly-pirates-chest/source/PiratesChest.fbx",
+            (fbx) => {
+              let chest = fbx;
+              console.log(chest);
+              this.mixerChest = new THREE.AnimationMixer(chest);
+              this.openingScene.add(chest);
+              chest.position.set(0, 0, 0);
+              chest.scale.set(0.007, 0.007, 0.007);
+              if (fbx.animations[2]) {
+                const animationAction = this.mixerChest.clipAction(
+                  fbx.animations[2]
+                );
+                console.log(animationAction);
+                animationAction.clampWhenFinished = true;
+                animationAction.repetitions = 1;
+                animationAction.play();
+              }
+              this.mixerChest.addEventListener("finished", (e) => {
+                this.openingSpawnItem();
+              });
+            }
+          );
+        }
+
+        openingSpawnItem() {
+          this.FBXLoader.load(
+            "/item/free-stylized-low-poly-swords/source/PP_Free_Swords.fbx",
+            (fbx) => {
+              let i = Math.floor(Math.random() * 6);
+              let item = fbx.children[i];
+              item.position.set(0, 1.2, 0);
+              item.scale.set(1, 1, 1);
+              console.log(fbx);
+              this.openingScene.add(item);
+              this.inventory.addItem("/img/item/sword(" + (i + 1) + ").png", 1);
+              document.querySelector(".echap").style.visibility = "visible";
+              document.addEventListener("keydown", (e) => {
+                this.exitOpening(e);
+              });
+            }
+          );
+        }
+
+        exitOpening(e) {
+          if (e.keyCode != 27) return;
+          document.removeEventListener("keydown", (e) => {
+            this.exitOpening(e);
+          });
+          document.querySelector(".echap").style.visibility = "hidden";
+          this.isOpening = false;
+        }
 
         showSelectMenu(visible = true) {
           document.querySelectorAll(".startGame").forEach((e) => {
             e.addEventListener("click", (e) => {
-              //const Annuaire = new annuaire(e.target.id);
-              //this.scale = Annuaire.scale;
-              //this.yAtOrigin = Annuaire.yAtOrigin;
-              //let path = Annuaire.path;
-              //this.load(path);
+              this.loading = true;
+              document.querySelector(".loadingScreen").style.visibility =
+                "visible";
               this.size = [];
               let modalBodyInput =
                 exampleModal.querySelector("#recipient-name");
@@ -1744,33 +786,12 @@
               this.size.z =
                 exampleModal.querySelector("#recipient-size-z").value || 20;
               console.log(modalBodyInput.value);
-              this.loading = true;
-              document.querySelector(".loadingScreen").style.visibility =
-                "visible";
               document.getElementById("selectMenu").style.visibility = "hidden";
               this.socket.emit("joinParty", modalBodyInput.value);
               this.StartGame();
             });
           });
           this.addPartyList();
-          //document
-          //  .querySelector("#createParty")
-          //  .addEventListener("click", (e) => this.createParty(e));
-
-          //document.querySelector("#thanos").addEventListener("click", (e) => {
-          //  //const Annuaire = new annuaire(e.target.id);
-          //  //this.scale = Annuaire.scale;
-          //  //this.yAtOrigin = Annuaire.yAtOrigin;
-          //  //let path = Annuaire.path;
-          //  //this.load(path);
-          //  this.socket.emit("joinParty", e.target.id);
-          //  document.getElementById("selectMenu").style.visibility = "hidden";
-          //  this.StartGame();
-          //});
-
-          // img.forEach((e) => {
-          //   e.addEventListener("click", (e) => this.load(e));
-          // });
 
           document.getElementById("menu").style.visibility = "hidden";
           document.getElementById("selectMenu").style.visibility = "visible";
@@ -1783,18 +804,19 @@
           for (let i = 0; i < this.partyList.length; i++) {
             party =
               party +
-              `<div party="${this.partyList[i]}" class="party">${this.partyList[i]}<button party="${this.partyList[i]}" class="startJoinGame">Join</button></div>`;
+              `<div party="${this.partyList[i]}" class="party">${this.partyList[i]}<button party="${this.partyList[i]}" onclick="document.querySelector('.loadingScreen').style.visibility =
+                'visible'" class="startJoinGame">Join</button></div>`;
           }
           document.querySelector("#partyList").innerHTML = party;
           document.querySelectorAll(".startJoinGame").forEach((e) => {
             e.addEventListener("click", (e) => {
-              let party = e.target.getAttribute("party");
-              console.log(e.target);
-              console.log(party);
               this.loading = true;
               document.querySelector(".loadingScreen").style.visibility =
                 "visible";
               document.getElementById("selectMenu").style.visibility = "hidden";
+              let party = e.target.getAttribute("party");
+              console.log(e.target);
+              console.log(party);
               this.socket.emit("joinParty", party);
               this.StartGame();
             });
@@ -1806,34 +828,6 @@
             ? "visible"
             : "hidden";
         }
-
-        //SetupTactileButton() {
-        //  var container = document.createElement("div");
-        //  container.style.position = "absolute";
-        //  container.style.bottom = "0px";
-        //  container.style.left = "0px";
-        //  container.id = "tactile_container";
-        //  var left = document.createElement("button");
-        //  left.innerHTML = "Go Left";
-        //  left.id = "left";
-        //  var right = document.createElement("button");
-        //  right.innerHTML = "Go Right";
-        //  right.id = "right";
-        //  document.body.appendChild(container);
-        //  document.getElementById("tactile_container").appendChild(left);
-        //  document.getElementById("tactile_container").appendChild(right);
-        //  this.tactileControls();
-        //}
-
-        //tactileControls() {
-        //  document.getElementById("left").addEventListener("click", () => {
-        //    this._keys.moveLeft = 1;
-        //  });
-        //  document.getElementById("right").addEventListener("click", () => {
-        //    console.log("right");
-        //    this._keys.moveRight = 1;
-        //  });
-        //}
 
         showResources() {
           document.querySelector("#resources").style.visibility = "visible";
@@ -1858,8 +852,8 @@
 
           this.renderer = new THREE.WebGLRenderer({
             antialias: true,
-            alpha: true,
-            //powerPreference: "high-performance",
+            alpha: false,
+            powerPreference: "high-performance",
             //depthBuffer: false
           });
           //this.render.setPixelRatio(window.devicePixelRatio);
@@ -1875,7 +869,7 @@
             60,
             window.innerWidth / window.innerHeight,
             1,
-            200
+            500
           );
           this.camera.position.set(0, 10, 50);
           this.camera.lookAt(0, -30, 0);
@@ -1892,6 +886,8 @@
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
+            this.openingCamera.aspect = window.innerWidth / window.innerHeight;
+            this.openingCamera.updateProjectionMatrix();
           });
         }
 
@@ -1938,25 +934,6 @@
           }
         }
 
-        //loadBackground() {
-        //  const IMGloader = new THREE.TextureLoader();
-        //  var texture = IMGloader.load("/background/teletebise.png");
-        //  // console.log(window.innerWidth, window.innerHeight);
-        //  var backgroundMesh = new THREE.Mesh(
-        //    new THREE.PlaneGeometry(
-        //      window.innerWidth / 8.28,
-        //      window.innerHeight / 8.28,
-        //      1
-        //    ),
-        //    new THREE.MeshBasicMaterial({
-        //      map: texture,
-        //    })
-        //  );
-        //  backgroundMesh.position.z = -10;
-        //  this.scene.add(backgroundMesh);
-        //  this.ShowMenu();
-        //}
-
         keyboardControlsDown(e) {
           var key = e.keyCode;
           // console.log(key);
@@ -1987,6 +964,9 @@
             case 32:
               // if (this.canJump)
               this.jump = true;
+              break;
+            case 69:
+              this.inventory.toggle();
               break;
 
             // case 13:
@@ -2071,50 +1051,60 @@
 
         mouseDownCanvas(e) {
           e.preventDefault();
+          console.log(e.which);
           this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
           this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
           this.raycaster.setFromCamera(this.mouse, this.camera);
           let intersects = this.raycaster.intersectObjects(this.clickableObjs);
+          if (e.which == 1) {
+            if (intersects.length > 0) {
+              if (intersects[0].object.name == "click") {
+                intersects[0].object.name = "";
+                this.cursor_cube.children.forEach(
+                  (e) => (e.material.opacity = 0)
+                );
+                this.cubePropertiesHidden();
+                this.gridSelectorHidden();
+                return;
+              } else if (intersects[0].object.name == "vendeur") {
+                this.inventory.toggleLootbox();
+                return;
+              }
+              if (this.scene.getObjectByName("click") != undefined)
+                this.scene.getObjectByName("click").name = "";
 
-          if (intersects.length > 0) {
-            //console.log(intersects[0].object);
-            if (intersects[0].object.name == "click") {
-              intersects[0].object.name = "";
-              this.cursor_cube.children.forEach(
-                (e) => (e.material.opacity = 0)
+              // If there is a match mouse/block (if the array is not empty)
+              var SelectedBloc = intersects[0].object; // we choose the first targetable element
+              intersects[0].object.name = "click";
+              //SelectedBloc.material.color.set( 0xff0000 );
+              this.cursor_cube.position.set(
+                SelectedBloc.position.x,
+                SelectedBloc.position.y,
+                SelectedBloc.position.z
               );
-              this.cubePropertiesHidden();
-              this.gridSelectorHidden();
-              return;
+              this.cursor_cube.children.forEach(
+                (e) => (e.material.opacity = 0.5)
+              );
+              this.cursor_cube.children.forEach(
+                (e) => (e.material.emissive.g = 0.5)
+              );
+              //this.cursor_cube.material.opacity = 0.5;
+              //this.cursor_cube.material.emissive.g = 0.5;
+              this.cubeProperties(
+                SelectedBloc.position.x,
+                SelectedBloc.position.z,
+                intersects[0].object.prop,
+                intersects[0].object.name,
+                intersects[0].object
+              );
             }
-            if (this.scene.getObjectByName("click") != undefined)
-              this.scene.getObjectByName("click").name = "";
-
-            // If there is a match mouse/block (if the array is not empty)
-            var SelectedBloc = intersects[0].object; // we choose the first targetable element
-            intersects[0].object.name = "click";
-            //SelectedBloc.material.color.set( 0xff0000 );
-            this.cursor_cube.position.set(
-              SelectedBloc.position.x,
-              SelectedBloc.position.y,
-              SelectedBloc.position.z
-            );
-            this.cursor_cube.children.forEach(
-              (e) => (e.material.opacity = 0.5)
-            );
-            this.cursor_cube.children.forEach(
-              (e) => (e.material.emissive.g = 0.5)
-            );
-            //this.cursor_cube.material.opacity = 0.5;
-            //this.cursor_cube.material.emissive.g = 0.5;
-            this.cubeProperties(
-              SelectedBloc.position.x,
-              SelectedBloc.position.z,
-              intersects[0].object.prop,
-              intersects[0].object.name,
-              intersects[0].object
-            );
+          } else if (e.which == 3) {
+            intersects[0].object.name = "";
+            this.cursor_cube.children.forEach((e) => (e.material.opacity = 0));
+            this.cubePropertiesHidden();
+            this.gridSelectorHidden();
+            console.log("attack");
           }
         }
 
@@ -2168,127 +1158,6 @@
           document.addEventListener("pointerup", (e) => this.mouseUp(e), false);
         }
 
-        //buildHouse(e) {
-        //  e.stopPropagation();
-        //  e.preventDefault();
-        //  if (document.querySelector("#woodCount").textContent >= 50) {
-        //    document.querySelector("#woodCount").textContent =
-        //      Number(document.querySelector("#woodCount").textContent) - 50;
-        //    let x = Number(document.querySelector("#x").innerHTML);
-        //    let z = Number(document.querySelector("#z").innerHTML);
-        //    this.loadStructure(
-        //      "house/01_medieval_house_low_poly.glb",
-        //      x,
-        //      -23,
-        //      z,
-        //      2,
-        //      true,
-        //      Math.PI / 2
-        //    );
-        //    this.Villagers.createVillager(
-        //      [x * 20, -25, z * 20 - 5],
-        //      this.houseN
-        //    );
-        //
-        //    this.houseN = this.houseN + 1;
-        //    this.Villagers.houseN = this.houseN;
-        //  } else {
-        //    document.querySelector("#error").innerHTML =
-        //      "<p>No enought Wood</p>";
-        //  }
-        //}
-        //
-        //buildMine(e) {
-        //  e.stopPropagation();
-        //  e.preventDefault();
-        //  if (document.querySelector("#stoneCount").textContent >= 50) {
-        //    document.querySelector("#stoneCount").textContent =
-        //      Number(document.querySelector("#stoneCount").textContent) - 50;
-        //    let x = Number(document.querySelector("#x").innerHTML);
-        //    let z = Number(document.querySelector("#z").innerHTML);
-        //    this.loadStructure(
-        //      "low-poly_mine/scene.gltf",
-        //      x + 0.5,
-        //      -28,
-        //      z + 0.5,
-        //      1,
-        //      false,
-        //      -Math.PI / 2
-        //    );
-        //    //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
-        //
-        //    //this.houseN = this.houseN + 1;
-        //    //this.Villagers.houseN = this.houseN;
-        //  } else {
-        //    document.querySelector("#error").innerHTML =
-        //      "<p>No enought Stone</p>";
-        //  }
-        //}
-        //buildBlacksmithHouse(e) {
-        //  e.stopPropagation();
-        //  e.preventDefault();
-        //  if (document.querySelector("#stoneCount").textContent >= 50) {
-        //    document.querySelector("#stoneCount").textContent =
-        //      Number(document.querySelector("#stoneCount").textContent) - 50;
-        //    let x = Number(document.querySelector("#x").innerHTML);
-        //    let z = Number(document.querySelector("#z").innerHTML);
-        //    this.loadStructure(
-        //      "blacksmiths_house/scene.gltf",
-        //      x + 2,
-        //      -28,
-        //      z,
-        //      0.1,
-        //      false,
-        //      Math.PI / 2
-        //    );
-        //    //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
-        //
-        //    //this.houseN = this.houseN + 1;
-        //    //this.Villagers.houseN = this.houseN;
-        //  } else {
-        //    document.querySelector("#error").innerHTML =
-        //      "<p>No enought Stone</p>";
-        //  }
-        //}
-        //buildShop(e) {
-        //  e.stopPropagation();
-        //  e.preventDefault();
-        //  if (document.querySelector("#stoneCount").textContent >= 50) {
-        //    document.querySelector("#stoneCount").textContent =
-        //      Number(document.querySelector("#stoneCount").textContent) - 50;
-        //    let x = Number(document.querySelector("#x").innerHTML);
-        //    let z = Number(document.querySelector("#z").innerHTML);
-        //    let y = -28;
-        //    this.socket.emit("structure", {
-        //      path: "small_store/scene.gltf",
-        //      x: x,
-        //      y: y,
-        //      z: z,
-        //      scale: 0.23,
-        //      house: false,
-        //      rotation: 0,
-        //    });
-        //    let emit = {
-        //      path: "small_store/scene.gltf",
-        //      x: x,
-        //      y: y,
-        //      z: z,
-        //      scale: 0.23,
-        //      house: false,
-        //      rotation: 0,
-        //    };
-        //    console.log(Object.keys(emit).map((_) => emit[_]));
-        //
-        //    this.loadStructure("small_store/scene.gltf", x, y, z, 0.23, false);
-        //    //this.Villagers.createVillager([x * 20, -25, z * 20], this.houseN);
-        //
-        //    //this.houseN = this.houseN + 1;
-        //    //this.Villagers.houseN = this.houseN;
-        //  } else {
-        //    document.querySelector("#error").innerHTML =
-        //      "<p>No enought Stone</p>";
-        //  }
-        //}
         buildStructure(
           e,
           unit,
@@ -2378,62 +1247,6 @@
           //document.body.appendChild(fragment);
         }
 
-        addVillagerMenu() {
-          if (this.houseN == 1) return;
-          if (document.querySelector("#noVillagerText")?.style) {
-            document.querySelector("#noVillagerText").style.visibility =
-              "hidden";
-          }
-          let workerList = "";
-          for (let i = 1; i < this.houseN; i++) {
-            console.log(i);
-            workerList =
-              workerList +
-              `<dl class="villagerList"><dt class="houseNumber">House n°${i}</dt><dd class="villagerName"><button villagerid="${
-                i + ".1"
-              }" class="jobButton">Villageois ${i}.1<br/><div villagerid="${
-                i + ".1"
-              }" class="job">${
-                this.villagers[i + ".1"].job
-              }</div></button></dd><dd class="villagerName"><button villagerid="${
-                i + ".2"
-              }" class="jobButton">Villageois ${i}.2<br/><div villagerid="${
-                i + ".2"
-              }" class="job">${
-                this.villagers[i + ".2"].job
-              }</div></button></dd><dd class="villagerName"><button villagerid="${
-                i + ".3"
-              }" class="jobButton">Villageois ${i}.3<br/><div villagerid="${
-                i + ".3"
-              }" class="job">${this.villagers[i + ".3"].job}
-              </div></button></dd></dl>`;
-          }
-          document.querySelector("#collectMenu").innerHTML = workerList;
-          document.querySelectorAll(".jobButton").forEach((e) => {
-            e.removeEventListener("click", (e) => this.doJob(e), false);
-          });
-          document.querySelectorAll(".jobButton").forEach((e) => {
-            e.addEventListener("click", (e) => this.doJob(e), false);
-          });
-        }
-
-        doJob(e) {
-          this.villagers[e.target.getAttribute("villagerid")].job = `from ${
-            this.scene.getObjectByName("click").prop
-          } at ${this.scene.getObjectByName("click").position.x / 20}, ${
-            this.scene.getObjectByName("click").position.z / 20
-          } to House  n°${e.target.getAttribute("villagerid").split(".")[0]}`;
-          this.villagers[e.target.getAttribute("villagerid")].collectTarget = [
-            this.scene.getObjectByName("click").position.x,
-            -28,
-            this.scene.getObjectByName("click").position.z,
-          ];
-          this.villagers[e.target.getAttribute("villagerid")].jobType =
-            this.scene.getObjectByName("click").prop;
-
-          this.addVillagerMenu();
-        }
-
         cubePropertiesHidden() {
           document.querySelector("#info").style.visibility = "hidden";
         }
@@ -2468,14 +1281,6 @@
             this.jump = false;
           }
         }
-
-        //startAmmo() {
-        //  Ammo().then((Ammo) => {
-        //    Ammo = Ammo;
-        //    this.AmmoClone = Ammo;
-        //    this.createAmmo(Ammo);
-        //  });
-        //}
 
         createAmmo() {
           this.TempTransform = new Ammo.btTransform();
@@ -2519,7 +1324,7 @@
               const material = new THREE.MeshBasicMaterial({
                 //transparent: true,
                 //opacity: 0,
-                color: 0x000000,
+                color: 0x0f0f0f,
               });
 
               let blockPlane = new THREE.Mesh(geometry, material);
@@ -2554,12 +1359,67 @@
               // rigidBody.setRollingFriction(10);
 
               this.dynamicsWorld.addRigidBody(rigidBody);
+              this.createVendeur();
             },
             undefined,
             (error) => {
               console.error(error);
             }
           );
+        }
+
+        createVendeur() {
+          const height = 10,
+            radius = 10,
+            mass = 5,
+            scale = { x: 6, y: 25, z: 6 },
+            quat = { x: 0, y: 0, z: 0, w: 1 };
+
+          this.GLTFLoader.load(
+            "/character/gentle_stickman/scene.gltf",
+            (fbx) => {
+              this.vendeur = fbx.scene;
+              this.vendeur.name = "vendeur";
+              this.vendeur.position.set(0, -250, -30);
+              this.vendeur.scale.set(4, 4, 4);
+              this.scene.add(this.vendeur);
+              const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+              const material = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                opacity: 0,
+                transparent: true,
+              });
+
+              let blockPlane = new THREE.Mesh(geometry, material);
+              blockPlane.name = "vendeur";
+              blockPlane.position.set(0, -250, -30);
+              this.scene.add(blockPlane);
+              this.clickableObjs.push(blockPlane);
+            },
+            undefined,
+            (error) => console.error(error)
+          );
+        }
+
+        loadBasicStructure(
+          structure,
+          x,
+          y,
+          z,
+          scale,
+          house,
+          rotation,
+          prop,
+          block
+        ) {
+          let gltf = this.preLoaded[structure].clone();
+          gltf.position.set(x * 20, y, z * 20);
+          gltf.scale.set(scale, scale, scale);
+          if (rotation) gltf.rotation.y = rotation;
+          if (prop) this.scene.getObjectById(block).prop = prop;
+          gltf.matrixAutoUpdate = false;
+          gltf.updateMatrix();
+          this.scene.add(gltf);
         }
 
         loadStructure(structure, x, y, z, scale, house, rotation, prop, block) {
@@ -2610,18 +1470,6 @@
           );
           this.dynamicsWorld.setGravity(new Ammo.btVector3(0, this.GRAVITY, 0));
         }
-
-        //randomSeed(e) {
-        //  let x = Math.sin(e++) * 10000;
-        //  return Math.floor((x - Math.floor(x)) * 1000000000);
-        //}
-
-        //randomNumber(e) {
-        //  e++;
-        //  let x = Math.sin(e++) * 10000;
-        //  return Math.floor((x - Math.floor(x)) * 100);
-        //}
-        //
 
         average(e) {
           this.total = this.total + 1;
@@ -2682,31 +1530,13 @@
               //console.log(random);
               this.average(random);
 
-              //if (random < this.randomP.houseVillager) {
-              //  this.createFloor(x, z, this.textureCubeGrass, "houseVillager");
-              //
-              //  this.loadStructure("house_minecraft/scene.gltf", x, -28, z, 20);
-              //  //this.createVillager(Ammo = AmmoClone, x,z)
-              //} else
               if (random < this.randomP.stone) {
                 console.log("stone");
                 this.createFloor(x, z, this.textureCubeRock, "stone");
-                this.loadStructure(
-                  "low-poly_rock/scene.gltf",
-                  x + 0.1,
-                  -25,
-                  z - 0.1,
-                  0.13
-                );
+                this.loadBasicStructure("stone", x + 0.1, -25, z - 0.1, 0.13);
               } else if (random < this.randomP.wood) {
                 this.createFloor(x, z, this.textureCubeGrass, "wood");
-                this.loadStructure(
-                  "tree_low-poly_3d_model/scene.gltf",
-                  x,
-                  -28,
-                  z,
-                  0.035
-                );
+                this.loadBasicStructure("tree", x, -28, z, 0.035);
               } else if (random < this.randomP.farmWithWheat) {
                 this.createFloor(x, z, this.textureCubeFarm, "wheat");
                 //this.loadStructure("source/Field of wheat--eWhaaKNh755/FieldOfWheat(1).gltf", x, z, 1.2);
@@ -2721,59 +1551,11 @@
           console.log("true average = ", this.totalAdd / this.total);
         }
 
-        //createVillager(position, house) {
-        //  for (let i = 1; i < 4; i++) {
-        //    this.FBXLoader.load(
-        //      "/character/stickman/source/Simple_Character.fbx",
-        //      (fbx) => {
-        //        this.villagers[house + "." + i] = fbx;
-        //        console.log(position);
-        //        this.villagers[house + "." + i].position.set(...position);
-        //        this.villagers[house + "." + i].scale.set(0.03, 0.03, 0.03);
-        //        this.villagers[house + "." + i].house = house;
-        //        this.villagers[house + "." + i].job = "Is not working";
-        //        this.villagers[house + "." + i].housePos = position;
-        //        this.villagers[house + "." + i].stay = false;
-        //        this.villagers[house + "." + i].returnHouse = false;
-        //
-        //        this.mixer[house + "." + i] = new THREE.AnimationMixer(fbx);
-        //
-        //        if (fbx.animations[0]) {
-        //          const animationAction = this.mixer[
-        //            house + "." + i
-        //          ].clipAction(fbx.animations[1]);
-        //          animationAction.play();
-        //          this.activeAction = animationAction;
-        //          this.villagerActions.push(animationAction);
-        //        }
-        //        this.scene.add(this.villagers[house + "." + i]);
-        //      },
-        //      undefined,
-        //      (error) => {
-        //        console.error(error);
-        //      }
-        //    );
-        //    setTimeout(() => {
-        //      this.modelReady = true;
-        //      console.log(this.villagerActions);
-        //      console.log("model ready");
-        //    }, 500);
-        //  }
-        //  this.addVillagerMenu();
-        //}
-
         createFloor(x, z, texture, property) {
           let position = { x: 20 * x, y: -30, z: 20 * z },
             scale = { x: 20, y: 3, z: 20 },
             quat = { x: 0, y: 0, z: 0, w: 1 },
             mass = 0;
-
-          //const textureCube = this.loader.load(texture);
-          //var materials = [
-          //new THREE.MeshLambertMaterial({
-          //    map: this.loader.load(texture)
-          // })
-          // ];
 
           const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
           const material = new THREE.MeshBasicMaterial({
@@ -2830,9 +1612,6 @@
 
           let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
 
-          // rigidBody.setFriction(4);
-          // rigidBody.setRollingFriction(10);
-
           this.dynamicsWorld.addRigidBody(rigidBody);
           blockPlane.matrixAutoUpdate = false;
           blockPlane.updateMatrix();
@@ -2840,9 +1619,6 @@
 
         CreatePlayer() {
           this.socket.emit("newPlayer");
-          //this.socket.on("test", (e) => {
-          //  console.log(e);
-          //});
           this.socket.on("pos", (d) => {
             const [id, anim, rot, pos] = d;
             if (!(id in this.players)) {
@@ -2854,22 +1630,6 @@
                 position = { x: 0, y: 10, z: 0 },
                 height = 50,
                 radius = 0.3;
-
-              // const height = 1.3,
-              //  radius = 0.3,
-              //  mass = 5,
-              //  position = { x: 30, y: 10, z: 0 },
-              //  scale = { x: 10, y: 50, z: 10 },
-              //  quat = { x: 0, y: this.rotationView, z: 0, w: 1 };
-
-              //const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
-              //const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-              //const cube = (this.player = new THREE.Mesh(geometry, material));
-              //cube.position.set(...d);
-              //
-              //cube.name = "player";
-              ////this.player = cube;
-              //this.scene.add(cube);
 
               if (!this.playerIsLoading) {
                 this.playerIsLoading = true;
@@ -2897,22 +1657,6 @@
                     console.error(error);
                   }
                 );
-                //const geometry = new THREE.BoxGeometry(
-                //  scale.x,
-                //  scale.y,
-                //  scale.z
-                //);
-                //const material = new THREE.MeshBasicMaterial({
-                //  color: 0xffffff,
-                //});
-                //const cube = new THREE.Mesh(geometry, material);
-                //cube.position.set(...d);
-                //
-                //cube.name = "player";
-                ////this.player = cube;
-                //this.scene.add(cube);
-                //console.log(id);
-                //this.players[id] = cube;
               }
             }
             //if (this.player == this.players[id])
@@ -2945,10 +1689,6 @@
             new Ammo.btVector3(scale.x, scale.y, scale.z)
           );
 
-          //let shape = new Ammo.btCapsuleShape(radius, height);
-          // shape.setMargin(0.05);
-          // shape.calculateLocalInertia(mass, localInertia);
-
           let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
             mass,
             motionState,
@@ -2968,81 +1708,11 @@
         }
 
         CreatePlayerLoad(pos, id, mainPlayer) {
-          //let position = { x: 0, y: 10, z: 0 },
-          //  scale = { x: 10, y: 10, z: 10 },
-          //  quat = { x: 0, y: 0, z: 0, w: 1 },
-          //  mass = 5,
-          //  height = 50,
-          //  radius = 0.3;
-          //
           const height = 10,
             radius = 10,
             mass = 5,
             scale = { x: 10, y: 3, z: 10 },
             quat = { x: 0, y: 0, z: 0, w: 1 };
-          //
-          ////const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
-          ////const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-          ////const cube = (this.player = new THREE.Mesh(geometry, material));
-          ////cube.position.set(position.x, position.y, position.z);
-          //
-          ////cube.name = "player";
-          ////this.player = cube;
-          ////this.scene.add(this.player);
-          //
-          //this.FBXLoader.load("/character (1).gltf", (object) => {
-          //  this.player = this.player = object;
-          //  // object.set(position.x, position.y, position.z);
-          //  // object.set(scale.x, scale.y, scale.z);
-          //  // object.set(quat.x, quat.y, quat.z, quat.w);
-          //  this.player.name = "player";
-          //  // setTimeout(() => {
-          //  //   console.log("1");
-          //  //   this.scene.add(object);
-          //  // }, 500);
-          //});
-          //
-          //this.GLTFloader.onLoadComplete = function () {
-          //  console.log("2");
-          //  this.scene.add(this.player);
-          //};
-          //
-          //let transform = new Ammo.btTransform();
-          //transform.setIdentity();
-          //transform.setOrigin(
-          //  new Ammo.btVector3(position.x, position.y, position.z)
-          //);
-          //transform.setRotation(
-          //  new Ammo.btQuaternion(quat.x, quat.y, quat.z, quat.w)
-          //);
-          //
-          //let motionState = new Ammo.btDefaultMotionState(transform);
-          //let localInertia = new Ammo.btVector3(0, 0, 0);
-          ////todo peut etre changer 0,5
-          //let shape = new Ammo.btBoxShape(
-          //  new Ammo.btVector3(scale.x, scale.y, scale.z)
-          //);
-          //
-          ////let shape = new Ammo.btCapsuleShape(radius, height);
-          //// shape.setMargin(0.05);
-          //// shape.calculateLocalInertia(mass, localInertia);
-          //
-          //let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
-          //  mass,
-          //  motionState,
-          //  shape,
-          //  localInertia
-          //);
-          //
-          //let rigidBody = new Ammo.btRigidBody(rigidBodyInfo);
-          //
-          //rigidBody.setFriction(0);
-          //
-          //rigidBody.setActivationState(this.STATE.DISABLE_DEACTIVATION);
-          //
-          //this.dynamicsWorld.addRigidBody(rigidBody);
-          //this.player.userData.physicsBody = rigidBody;
-          //this.rigidBodies.push(this.player);
 
           this.GLTFLoader.load(
             "/character/gentle_stickman/scene.gltf",
@@ -3050,13 +1720,9 @@
               console.log(fbx);
               this.player = fbx.scene;
               this.player.name = "player";
-              //this.player.rotation.set(0, this.rotationView, 0);
               this.player.position.set(...pos);
               this.player.scale.set(4, 4, 4);
 
-              //this.player = cube;
-              //this.scene.add(cube);
-              //this.player = cube;
               this.players[id] = fbx.scene;
               this.mixer = new THREE.AnimationMixer(this.players[id]);
               // console.log(fbx);
@@ -3075,11 +1741,6 @@
                 );
               }
 
-              // this.setAction(animationAction);
-
-              // const action = this.mixer.clipAction(fbx.animations[0]);
-              // action.play();
-
               this.scene.add(fbx.scene);
 
               let transform = new Ammo.btTransform();
@@ -3095,10 +1756,6 @@
               let shape = new Ammo.btBoxShape(
                 new Ammo.btVector3(scale.x, scale.y, scale.z)
               );
-
-              //let shape = new Ammo.btCapsuleShape(radius, height);
-              // shape.setMargin(0.05);
-              // shape.calculateLocalInertia(mass, localInertia);
 
               let rigidBodyInfo = new Ammo.btRigidBodyConstructionInfo(
                 mass,
@@ -3120,13 +1777,6 @@
               if (!this.playerRigidBodyI) this.rigidBodies.push(this.player);
               else this.rigidBodies[this.playerRigidBodyI] = this.player;
               this.playerRigidBodyI = this.rigidBodies.length - 1;
-              //this.playerBB = new THREE.Box3(
-              //  new THREE.Vector3(),
-              //  new THREE.Vector3()
-              //).setFromObject(this.player);
-
-              // this.player.rotation.set(new THREE.Vector3(0, 0, Math.PI / 2));
-              // console.log(this.player.rotation);
 
               //this.loadAction("/character/mutant/Idle.fbx", "idle");
               //this.loadAction("/character/mutant/Walking.fbx", "run");
@@ -3146,123 +1796,7 @@
               console.error(error);
             }
           );
-
-          // this.loader.load(
-          //   "/mutant/Idle.fbx",
-          //   (anim) => {
-          //     console.log(anim);
-          //     const animationAction = this.mixer.clipAction(anim.animations[0]);
-          //     this.animationActions.push(animationAction);
-          //     // animationsFolder.add(animations, "default");
-
-          //     // animationAction.play();
-
-          //     // this.setAction(animationAction);
-
-          //     // const action = this.mixer.clipAction(anim.animations[0]);
-          //     // action.play();
-          //     // animationsFolder.add(animations, "walking");
-          //     // console.log(fbx);
-          //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
-          //     // this.assets["walkAnim"] = fbx;
-          //     // this.zombieAnims = {};
-          //     // this.SetAnim("run", this.assets["walkAnim"]);
-          //   },
-          //   undefined,
-          //   (error) => {
-          //     console.error(error);
-          //   }
-          // );
-
-          // this.loader.load(
-          //   "/mutant/Walking.fbx",
-          //   (fbx) => {
-          //     console.log(fbx);
-          //     const animationAction = this.mixer.clipAction(fbx.animations[0]);
-          //     this.animationActions.push(animationAction);
-          //     // const action = this.mixer.clipAction(fbx.animations[0]);
-          //     // action.play();
-          //     // animationsFolder.add(animations, "walking");
-          //     // console.log(fbx);
-          //     // this.zombieAnims["walkAnim"] = fbx.animations[0];
-          //     // this.assets["walkAnim"] = fbx;
-          //     // this.zombieAnims = {};
-          //     // this.SetAnim("run", this.assets["walkAnim"]);
-          //   },
-          //   undefined,
-          //   (error) => {
-          //     console.error(error);
-          //   }
-          // );
-
-          // this.SetAnim("idle", this.assets["idleAnim"]);
-          // this.SetAnim("run", this.assets["runAnim"]);
-          // this.SetAnim("attack", this.assets["attackAnim"]);
-          // this.SetAnim("die", this.assets["dieAnim"]);
-          //setTimeout(() => {
-          //  this.modelReady = true;
-          //  console.log(this.animationActions);
-          //  console.log("model ready");
-          //}, 5000);
         }
-
-        // QueryJump() {
-        //   const dispatcher = this.dynamicsWorld.getDispatcher();
-        //   const numManifolds = dispatcher.getNumManifolds();
-
-        //   for (let i = 0; i < numManifolds; i++) {
-        //     const contactManifold = dispatcher.getManifoldByIndexInternal(i);
-        //     // console.log(contactManifold);
-        //     const rb0 = Ammo.castObject(
-        //       contactManifold.getBody0(),
-        //       Ammo.btRigidBody
-        //     );
-        //     const rb1 = Ammo.castObject(
-        //       contactManifold.getBody1(),
-        //       Ammo.btRigidBody
-        //     );
-
-        //     // console.log(this.player.userData.physicsBody);
-        //     // console.log(rb0);
-        //     // console.log(rb1);
-
-        //     if (
-        //       rb0 != this.player.userData.physicsBody &&
-        //       rb1 != this.player.userData.physicsBody
-        //     ) {
-        //       continue;
-        //     }
-
-        //     console.log("test");
-
-        //     const numContacts = contactManifold.getNumContacts();
-        //     // console.log(numContacts);
-
-        //     for (let j = 0; j < numContacts; j++) {
-        //       const contactPoint = contactManifold.getContactPoint(j);
-        //       // console.log(contactPoint);
-
-        //       const normal = contactPoint.get_m_normalWorldOnB();
-        //       this.tempVecJump.setValue(normal.x(), normal.y(), normal.z());
-        //       // console.log(this.tempVecJump);
-
-        //       if (rb1 == this.player.userData.physicsBody) {
-        //         this.tempVecJump.setValue(
-        //           -this.tempVecJump.x(),
-        //           -this.tempVecJump.y(),
-        //           -this.tempVecJump.z()
-        //         );
-        //       }
-
-        //       const angle = this.tempVecJump.dot(this.up);
-        //       this.canJump = angle > 0.5;
-
-        //       if (this.canJump) {
-        //         return;
-        //       }
-        //     }
-        //   }
-        // }
 
         QueryJump() {
           let dispatcher = this.dynamicsWorld.getDispatcher();
@@ -3290,18 +1824,6 @@
           }
         }
 
-        // querryJumpStartAmmo() {
-        //   Ammo().then((Ammo) => {
-        //     Ammo = Ammo;
-        //     this.AmmoClone = Ammo;
-        //     this.querryJumpCreateAmmo(Ammo);
-        //   });
-        // }
-        //
-        // querryJumpCreateAmmo() {
-        //   this.QueryJump(Ammo);
-        // }
-
         updatePhysics(timeElapsed) {
           this.dynamicsWorld.stepSimulation(timeElapsed, 10);
 
@@ -3311,8 +1833,6 @@
               this.rigidBodies[i].userData?.physicsBody
             ) {
               let threeObject = this.rigidBodies[i];
-              // console.log(i);
-              // console.log(threeObject);
               let ammoObject = threeObject.userData.physicsBody;
               let ms = ammoObject.getMotionState();
 
@@ -3325,10 +1845,6 @@
                 threeObject.quaternion.x = quat.x();
                 threeObject.quaternion.z = quat.z();
               }
-              //let angVel = this.player.userData.physicsBody.getAngularVelocity();
-              //this.player.userData.physicsBody.setAngularVelocity(
-              //  new Ammo.btVector3(angVel.x, angVel.y, angVel.z)
-              //);
               this.QueryJump();
             }
           }
@@ -3337,7 +1853,7 @@
         movePlayer() {
           if (!this.player) return;
           if (!this.player?.userData) return;
-          if (!this.player.userData?.physicsBody) return;
+          //if (!this.player.userData?.physicsBody) return;
           //if (this.player?.position?.x)
           //this.playerCurrentPosition = this.player.position
           if (!this.playerLastPosition)
@@ -3353,25 +1869,17 @@
             });
 
             this.updateShop();
-          } else {
-            //console.log("ff");
           }
 
           this.moveDir = new THREE.Vector3();
           const forwardFactor =
             this._keys.moveBackward - this._keys.moveForward ||
-            this.moveForwardJoystick ||
+            this.Joystick.moveForwardJoystick ||
             0;
           const rightFactor =
             this._keys.moveRight - this._keys.moveLeft ||
-            this.moveRightJoystick ||
+            this.Joystick.moveRightJoystick ||
             0;
-          //const direction = this.moveDir
-          //  .set(rightFactor, 0.0, forwardFactor)
-          //  .normalize();
-          //const direction = this.player.getWorldDirection(this.moveDir)
-          //var direction = new THREE.Vector3( 0, 0, -1 ).applyQuaternion( this.player.quaternion );
-          //console.log(direction);
 
           const velocity = this.player.userData.physicsBody.getLinearVelocity();
 
@@ -3381,23 +1889,11 @@
             this.canJump = false;
           }
 
-          // if (rightFactor != 0 || forwardFactor != 0) {
-          //   this.socket.emit("pos", this.player.position.toArray());
-          // }
-
           if (rightFactor != 0 || forwardFactor != 0) {
-            //console.log("e");
-            //this.player.rotation.y = Math.atan2(velocity.z(), velocity.x());
-            //this.player.rotation.y += Math.PI / 2;
             this.setAction(this.animationActions["run"]);
           } else {
             this.setAction(this.animationActions["idle"]);
           }
-
-          // if(Input.GetKeyDown('Space') && this.physicsComponent.canJump){
-          //     velocity.setY(this.jumpVelocity);
-          //     this.physicsComponent.canJump = false;
-          // }
 
           //this.Deccelerate(t);
           //this.Accelarate(direction, t);
@@ -3409,41 +1905,8 @@
           velocity.setX(moveVector.x * 5);
           velocity.setZ(moveVector.z * 5);
 
-          //if (rightFactor != 0 || forwardFactor != 0) {
-          //this.player.rotation.set(0, 90*Math.PI/, 0);
-          //this.playerRotation += 0.01
-          //console.log(this.playerRotation);
-          //-1 left
-          //+1 right
-          //0.7 bottom right
-          //console.log(direction);
-          //console.log(this.player.userData.physicsBody.getAngularVelocity());
-          ///console.log(this.player.quaternion);
-          //const quaternion = new THREE.Quaternion();
-          //quaternion = new Ammo.btVector3(rightFactor, 0, forwardFactor);
-          //console.log(quaternion.y());
-          //console.log(new Ammo.btVector3(rightFactor, 0, forwardFactor));
-          // let q = this.player.quaternion.copy().inverse();
-          //velocity.applyQuaternion(quaternion);
-          //let angVel = this.player.userData.physicsBody.getAngularVelocity();
-          //console.log(angVel.y());
-          //this.player.userData.physicsBody.setAngularVelocity(
-          //  new Ammo.btVector3(0, -1, 0)
-          //);
-          //} else {
-          //  this.playerRotation = 0;
-          //}
-
-          //let directionX = rightFactor * 90;
-          //if (forwardFactor == -1) {
-          //  let directionZ = 180;
-          //} else if (forwardFactor == 1) {
-          //  let directionZ = 0;
-          //}
-          //directionX = (rightFactor * Math.PI) / 180;
-          //directionZ = (forwardFactor * Math.PI) / 180
-          if (this.rotationCanvasEnable) {
-            this.player.rotation.set(0, this.rotationCanvas, 0);
+          if (this.Joystick.rotationCanvasEnable) {
+            this.player.rotation.set(0, this.Joystick.rotationCanvas, 0);
           } else {
             if (rightFactor == 1) {
               if (forwardFactor == 1) {
@@ -3468,62 +1931,8 @@
             }
           }
 
-          //this.player.lookAt(direction)
-          //if (forwardFactor == 1) {
-          //  if (rightFactor == 1) {
-          //    this.player.rotation.set(0, Math.PI / (-135 / 45), 0);
-          //  } else if (rightFactor == -1) {
-          //    this.player.rotation.set(0, Math.PI / (45 / 45), 0);
-          //  }
-          //} else if (forwardFactor == -1) {
-          //  if (rightFactor == 1) {
-          //    this.player.rotation.set(0, Math.PI / (-135 / 45), 0);
-          //  } else if (rightFactor == -1) {
-          //    this.player.rotation.set(0, Math.PI / (-45 / 45), 0);
-          //  }
-          //}
-
-          // console.log(this.playerObject.userData.physicsBody);
-          //switch (rightFactor) {
-          //  case -1:
-          //    this.player.rotation.set(0, Math.PI / (-90 / 45), 0);
-          //    break;
-          //
-          //  case 1:
-          //    this.player.rotation.set(0, Math.PI / (90 / 45), 0);
-          //    break;
-          //}
-          //switch (forwardFactor) {
-          //  case -1:
-          //    this.player.rotation.set(0, Math.PI / (-180 / 45), 0);
-          //    break;
-          //
-          //  case 1:
-          //    this.player.rotation.set(0, Math.PI / (180 / 45), 0);
-          //    break;
-          //}
-
           this.player.userData.physicsBody.setLinearVelocity(velocity);
-          //let playerPosition = this.playerObject.position;
 
-          //this.camera.position.set(
-          //  playerPosition.x,
-          //  playerPosition.y + 20,
-          //  playerPosition.z + 40
-          //);
-          //this.camera.lookAt(this.playerObject.position);
-
-          //this.player.userData.physicsBody.setAngularVelocity(quaternion);
-
-          // const ms = this.playerObject.userData.physicsBody.getMotionState();
-          // if (ms) {
-          //   ms.getWorldTransform(this.transform);
-          //   const p = this.TempTransform.getOrigin();
-          //   this.player.position.set(p.x(), p.y() + this.yOffset, p.z());
-          //   this.player.rotation.set(0, -90, 0);
-          //   // this.camera.position.set(p.x(), p.y() + this.yOffset, p.z());
-          //   // this.parent.SetPosition(this.camera.position);
-          // }
           this.playerLastPosition.copy(this.player.position);
         }
 
@@ -3577,12 +1986,6 @@
 
           this.camera.position.copy(this.currentPosition);
           this.camera.lookAt(this.currentLookat);
-
-          //this.camera.position.set(
-          //  playerPosition.x,
-          //  playerPosition.y + 20,
-          //  playerPosition.z + 40
-          //);
         }
 
         //update = () => {
@@ -3625,142 +2028,7 @@
         //  this.animFrameId = window.requestAnimationFrame(this.update);
         //};
 
-        canvasSetUp() {
-          this.canvas = document.getElementById("joystick");
-          this.ctx = this.canvas.getContext("2d");
-          this.canvasResize();
-
-          joystick.addEventListener("mousedown", (e) => this.startDrawing(e));
-          joystick.addEventListener("mouseup", () => this.stopDrawing());
-          document.addEventListener("mousemove", (e) => this.Draw(e));
-
-          joystick.addEventListener("touchstart", (e) => this.startDrawing(e));
-          joystick.addEventListener("touchend", () => this.stopDrawing());
-          joystick.addEventListener("touchcancel", () => this.stopDrawing());
-          document.addEventListener("touchmove", (e) => this.Draw(e));
-          window.addEventListener("resize", () => this.canvasResize());
-
-          this.coord = { x: 0, y: 0 };
-          this.paint = false;
-        }
-        is_it_in_the_circle() {
-          var current_radius = Math.sqrt(
-            Math.pow(this.coord.x - this.x_orig, 2) +
-              Math.pow(this.coord.y - this.y_orig, 2)
-          );
-          if (this.radius >= current_radius) return true;
-          else return false;
-        }
-        getPosition(event) {
-          var mouse_x = event?.clientX || event?.touches?.[0].clientX;
-          var mouse_y = event?.clientY || event?.touches[0].clientY;
-          this.coord.x = mouse_x - this.canvas.offsetLeft;
-          this.coord.y = mouse_y - this.canvas.offsetTop;
-        }
-        joystick(width, height) {
-          this.ctx.beginPath();
-          this.ctx.arc(width, height, this.radius / 2, 0, Math.PI * 2, true);
-          this.ctx.fillStyle = "#F08080";
-          this.ctx.fill();
-          this.ctx.strokeStyle = "#F6ABAB";
-          this.ctx.lineWidth = 8;
-          this.ctx.stroke();
-        }
-        Draw(event) {
-          if (this.paint) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.background();
-            var angle_in_degrees, x, y, speed;
-            var angle = Math.atan2(
-              this.coord.y - this.y_orig,
-              this.coord.x - this.x_orig
-            );
-
-            if (Math.sign(angle) == -1) {
-              angle_in_degrees = Math.round((-angle * 180) / Math.PI);
-            } else {
-              angle_in_degrees = Math.round(360 - (angle * 180) / Math.PI);
-            }
-
-            if (this.is_it_in_the_circle()) {
-              this.joystick(this.coord.x, this.coord.y);
-              x = this.coord.x;
-              y = this.coord.y;
-            } else {
-              x = this.radius * Math.cos(angle) + this.x_orig;
-              y = this.radius * Math.sin(angle) + this.y_orig;
-              this.joystick(x, y);
-            }
-
-            this.getPosition(event);
-
-            var speed = Math.round(
-              (100 *
-                Math.sqrt(
-                  Math.pow(x - this.x_orig, 2) + Math.pow(y - this.y_orig, 2)
-                )) /
-                this.radius
-            );
-
-            var x_relative = Math.round(x - this.x_orig);
-            var y_relative = Math.round(y - this.y_orig);
-            this.moveForwardJoystick = y_relative / 50;
-            this.moveRightJoystick = x_relative / 50;
-            this.rotationCanvasEnable = true;
-            this.rotationCanvas = (angle_in_degrees + 90) * (Math.PI / 180);
-            //send(x_relative, y_relative, speed, angle_in_degrees);
-          }
-        }
-        stopDrawing() {
-          this.paint = false;
-          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.background();
-          this.joystick(this.width / 2, this.height / 2);
-          this.moveForwardJoystick = 0;
-          this.moveRightJoystick = 0;
-          this.rotationCanvasEnable = false;
-        }
-        startDrawing(event) {
-          event.preventDefault();
-          this.paint = true;
-          this.getPosition(event);
-          console.log(this.is_it_in_the_circle());
-          if (this.is_it_in_the_circle()) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.background();
-            this.joystick(this.coord.x, this.coord.y);
-            this.Draw();
-          }
-        }
-        background() {
-          this.x_orig = this.width / 2;
-          this.y_orig = this.height / 2;
-
-          this.ctx.beginPath();
-          this.ctx.arc(
-            this.x_orig,
-            this.y_orig,
-            this.radius * 1.5,
-            0,
-            Math.PI * 2,
-            true
-          );
-          this.ctx.fillStyle = "#ECE5E5";
-          this.ctx.fill();
-        }
-        canvasResize() {
-          this.radius = 50;
-          //width = window.innerWidth
-          this.width = this.radius * 3.25;
-          this.height = this.radius * 3.25;
-          this.ctx.canvas.width = this.width;
-          this.ctx.canvas.height = this.height;
-          this.background();
-          this.joystick(this.width / 2, this.height / 2);
-        }
-
         updateShop() {
-          console.log(this.player.position);
           for (let i = 0; i < this.shop.length; i++) {
             if (
               Math.round(
@@ -3805,8 +2073,13 @@
             if (!this.previousFrame) {
               this.previousFrame = t;
             }
-            this.step(t);
-            this.renderer.render(this.scene, this.camera);
+            if (!this.isOpening) {
+              this.step(t);
+              this.renderer.render(this.scene, this.camera);
+            } else if (this.mixerChest) {
+              this.mixerChest.update(this.clock.getDelta());
+              this.renderer.render(this.openingScene, this.openingCamera);
+            }
 
             this.previousFrame = t;
             this.update();
@@ -3825,7 +2098,7 @@
               "hidden";
             if (window.mobileAndTabletCheck()) {
               document.querySelector(".joystick").style.visibility = "visible";
-              this.canvasSetUp();
+              this.Joystick.canvasSetUp();
             }
           }
 
@@ -3834,17 +2107,11 @@
           this.delta = this.clock.getDelta();
 
           let timeElapsed = t - this.previousFrame;
-          //let timeElapsed = this.clock.getElapsedTime();
           const timeElapsedS = timeElapsed * 0.001;
 
           if (this.mixer && this.modelReady && this.player) {
-            //this.animationActions[0].play()
-            //console.log(this.villagers["1.1"]);
-            //this.villagerActions[0].play();
-            this.mixer.update(this.delta);
-            //this.mixer.update(this.delta);
+            this.mixer.update(this.delta * 0.75);
           }
-          //console.log(this.player.position);
 
           this.thirdPersonCameraUpdate(timeElapsed);
           this.movePlayer();
@@ -3882,7 +2149,6 @@
           return check;
         };
         console.log(window.mobileAndTabletCheck());
-        const myModalAlternative = new bootstrap.Modal("#lootbox").toggle();
         Ammo().then((lib) => {
           Ammo = lib;
           let app = new App();
@@ -3891,7 +2157,6 @@
     </script>
   </head>
   <body>
-    <script></script>
     <div id="info"></div>
     <div id="gridSelector">
       <button id="showBuildMenu">Build Menu</button>
@@ -4065,6 +2330,91 @@
       />
       <p>Loading...</p>
     </div>
+    <div class="inventory">
+      <div
+        class="modal fade"
+        id="inventory"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
+        tabindex="-1"
+        aria-labelledby="inventoryLabel"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-dialog-scrollable modal-xl">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="inventoryLabel">Inventory</h5>
+
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body inventoryContent">
+              <div class="itemCount">
+                <button
+                  class="inventoryItem"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="This top tooltip is themed via CSS variables."
+                >
+                  <img src="/img/wood.png" alt="" />
+                </button>
+                50
+              </div>
+              <div class="itemCount">
+                <button
+                  class="inventoryItem"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="This top tooltip is themed via CSS variables."
+                >
+                  <img src="/img/wood.png" alt="" />
+                </button>
+                50
+              </div>
+              <div class="itemCount">
+                <button
+                  class="inventoryItem"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="This top tooltip is themed via CSS variables."
+                >
+                  <img src="/img/wood.png" alt="" />
+                </button>
+                50
+              </div>
+              <div class="itemCount">
+                <button
+                  class="inventoryItem"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-custom-class="custom-tooltip"
+                  data-bs-title="This top tooltip is themed via CSS variables."
+                >
+                  <img src="/img/wood.png" alt="" />
+                </button>
+                50
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="modalShop">
       <div
         class="modal fade"
@@ -4131,27 +2481,27 @@
                   role="tabpanel"
                   aria-labelledby="nav-home-tab"
                 >
-                  <button class="produit">
+                  <button class="produit lootbox" lb-lv="1">
                     <img src="/img/lootbox-lv1.png" alt="" />
                     50€
                   </button>
 
-                  <button class="produit">
+                  <button class="produit lootbox" lb-lv="2">
                     <img src="/img/lootbox-lv2.png" alt="" />
                     50€
                   </button>
 
-                  <button class="produit">
+                  <button class="produit lootbox" lb-lv="3">
                     <img src="/img/lootbox-lv3.png" alt="" />
                     50€
                   </button>
 
-                  <button class="produit">
+                  <button class="produit lootbox" lb-lv="4">
                     <img src="/img/lootbox-lv4.png" alt="" />
                     50€
                   </button>
 
-                  <button class="produit">
+                  <button class="produit lootbox" lb-lv="5">
                     <img src="/img/lootbox-lv5.png" alt="" />
                     50€
                   </button>
@@ -4162,10 +2512,10 @@
                   role="tabpanel"
                   aria-labelledby="nav-profile-tab"
                 >
-                <button class="produit">
-                  <img src="/img/wood.png" alt="" />
-                  50€
-                </button>
+                  <button class="produit">
+                    <img src="/img/wood.png" alt="" />
+                    50€
+                  </button>
                 </div>
                 <div
                   class="tab-pane fade"
@@ -4182,10 +2532,13 @@
         </div>
       </div>
     </div>
-
+    <div class="echap">
+      <p>Press ECHAP to exit</p>
+    </div>
     <div class="joystick">
       <canvas id="joystick" name="game"></canvas>
     </div>
-    <div id="three"></div>
+    <div id="openingScene"></div>
+    <div id="three" oncontextmenu="return false"></div>
   </body>
 </html>
