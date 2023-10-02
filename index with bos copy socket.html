@@ -500,7 +500,7 @@
           this.villagerActions = [];
           this.mixer = [];
 
-          this.seed = 69;
+          this.seed = 0;
           this.mapSize = { x: 20, z: 20 };
 
           this.playerLastPosition = new THREE.Vector3();
@@ -780,7 +780,7 @@
               let modalBodyInput =
                 exampleModal.querySelector("#recipient-name");
               this.seed =
-                exampleModal.querySelector("#recipient-seed").value || 69;
+                exampleModal.querySelector("#recipient-seed").value || 0;
               this.size.x =
                 exampleModal.querySelector("#recipient-size-x").value || 20;
               this.size.z =
@@ -2275,7 +2275,7 @@
                       type="text"
                       class="form-control"
                       id="recipient-seed"
-                      placeholder="69"
+                      placeholder="0"
                     />
                   </div>
                   <div class="form-row">
